@@ -1,0 +1,23 @@
+{
+  "name": "saols",
+  "version": "1.0.0",
+  "description": "An Interactive Twitter SAO Experience",
+  "main": "index.ts",
+  "repository": "https://github.com/timothyheadrick12/saols",
+  "author": "Prosperf",
+  "license": "GPL-3.0-or-later",
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./build/index.js",
+    "dev": "ts-node ./src/index.ts"
+  },
+  "dependencies": {
+    "@types/node": "^18.6.3",
+    "axios": "^0.27.2",
+    "typescript": "^4.7.4"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
