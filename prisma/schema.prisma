@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id Int @id @default(autoincrement())
+    username String @unique
+    name String
+    lvl Int @default(1)
+    str Int @default(1)
+    agi Int @default(1)
+    cor Int @default(100)
+    weapon Weapon @relation(fields: [weaponId], references: [id])
+    weaponId Int
+    items Item[]
+    swordSkills SwordSkill[]
+    betaTester Boolean @default(true)
+    beater Boolean @default(false)
+}
+
+model Weapon {
+    id Int @id @default(autoincrement())
+    users User[]
+    lvl Int
+    atk Int
+    weight Int
+}
+
+model Item {
+    id Int @id @default(autoincrement())
+    users User[]
+    name String
+    description String
+}
+
+model SwordSkill {
+    id Int @id @default(autoincrement())
+    name String
+    description String
+    power Int
+    users User[]
+}
+
+model Tweet {
+    id Int @id @default(autoincrement())
+    text String
+    schedule DateTime
+    type TweetType
+}
+
+model BattlePrompts {
+    id Int @id @default(autoincrement())
+    text String
+}
+
+model MarketPrompts {
+    id Int @id @default(autoincrement())
+    text String
+}
+
+enum TweetType {
+    ENCOUNTER
+    MARKET
+    BOSS
+    MESSAGE
+}

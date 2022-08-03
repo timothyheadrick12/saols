@@ -27,6 +27,23 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@prisma/client@4.1.1":
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-4.1.1.tgz#dcb1118397deb8247fbe39a1f3eee5606648adf8"
+  integrity sha512-2pXuIUYxHv5H9o6QTa1VIsl4yMgsAjKQOitlo8WVTB+vo73rmMJITBPavdGUZSWUc7adMkFzEV3y5rVTUQr77Q==
+  dependencies:
+    "@prisma/engines-version" "4.1.0-48.8d8414deb360336e4698a65aa45a1fbaf1ce13d8"
+
+"@prisma/engines-version@4.1.0-48.8d8414deb360336e4698a65aa45a1fbaf1ce13d8":
+  version "4.1.0-48.8d8414deb360336e4698a65aa45a1fbaf1ce13d8"
+  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-4.1.0-48.8d8414deb360336e4698a65aa45a1fbaf1ce13d8.tgz#ce00e6377126e491a8b1e0e2039c97e2924bd6d9"
+  integrity sha512-cRRJwpHFGFJZvtHbY3GZjMffNBEjjZk68ztn+S2hDgPCGB4H66IK26roK94GJxBodSehwRJ0wGyebC2GoIH1JQ==
+
+"@prisma/engines@4.1.1":
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-4.1.1.tgz#a6a75870618bbd19ff734c51af7dbe9f362c3265"
+  integrity sha512-DCw8L/SS0IXqmj5IW/fMxOXiifnsfjBzDfRhf0j3NFWqvMCh9OtfjmXQZxVgI2mwvJLc/5jzXhkiWT39qS09dA==
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.9.tgz#df4907fc07a886922637b15e02d4cebc4c0021b2"
@@ -72,6 +89,13 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
+axios-oauth-1.0a@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/axios-oauth-1.0a/-/axios-oauth-1.0a-0.3.5.tgz#eda5f99daff58537d1c99087f4d4c5f2b4c19568"
+  integrity sha512-lPUJ+EtisaCSb2X6lgj6107lD0YlwqJC0/SVE4J3ngXLFmkBTM1ALZ+6codl6J8SJjnU6glOwfAqm60/cjWaQg==
+  dependencies:
+    oauth-sign "^0.9.0"
+
 axios@^0.27.2:
   version "0.27.2"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.27.2.tgz#207658cc8621606e586c85db4b41a750e756d972"
@@ -101,6 +125,11 @@ diff@^4.0.1:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/diff/-/diff-4.0.2.tgz#60f3aecb89d5fae520c11aa19efc2bb982aade7d"
   integrity sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==
+
+dotenv@^16.0.1:
+  version "16.0.1"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.0.1.tgz#8f8f9d94876c35dac989876a5d3a82a267fdce1d"
+  integrity sha512-1K6hR6wtk2FviQ4kEiSjFiH5rpzEVi8WW0x96aztHVMhEspNpc4DVOUTEHtEva5VThQ8IaBX1Pe4gSzpVVUsKQ==
 
 follow-redirects@^1.14.9:
   version "1.15.1"
@@ -132,6 +161,18 @@ mime-types@^2.1.12:
   integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
   dependencies:
     mime-db "1.52.0"
+
+oauth-sign@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/oauth-sign/-/oauth-sign-0.9.0.tgz#47a7b016baa68b5fa0ecf3dee08a85c679ac6455"
+  integrity sha512-fexhUFFPTGV8ybAtSIGbV6gOkSv8UtRbDBnAyLQw4QPKkgNlsH2ByPGtMUqdWkos6YCRmAqViwgZrJc/mRDzZQ==
+
+prisma@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-4.1.1.tgz#41c2e19896357f484ef21567165d762908376fca"
+  integrity sha512-yw50J8If2dKP4wYIi695zthsCASQFHiogGvUHHWd3falx/rpsD6Sb1LMLRV9nO3iGG3lozxNJ2PSINxK7xwdpg==
+  dependencies:
+    "@prisma/engines" "4.1.1"
 
 ts-node@^10.9.1:
   version "10.9.1"

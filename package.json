@@ -13,11 +13,15 @@
     "dev": "ts-node ./src/index.ts"
   },
   "dependencies": {
+    "@prisma/client": "4.1.1",
     "@types/node": "^18.6.3",
     "axios": "^0.27.2",
+    "axios-oauth-1.0a": "^0.3.5",
+    "dotenv": "^16.0.1",
     "typescript": "^4.7.4"
   },
   "devDependencies": {
+    "prisma": "^4.1.1",
     "ts-node": "^10.9.1"
   }
 }
