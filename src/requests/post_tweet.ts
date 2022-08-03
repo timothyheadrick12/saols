@@ -23,6 +23,7 @@
 import axios from "axios";
 import addOAuthInterceptor from "axios-oauth-1.0a";
 import { sleep } from "../sleep";
+import { base_bot_post } from "./base_requests";
 export interface postTweetData {
   id?: string;
   limitReached?: boolean;
@@ -31,48 +32,8 @@ export interface postTweetData {
 }
 
 export default async (tweet: string): Promise<string | undefined> => {
-  const TOO_MANY_REQUESTS = 429;
-  // Create a client whose requests will be signed
-  const client = axios.create();
-
-  // Specify the OAuth options
-  const options = {
-    algorithm: "HMAC-SHA1" as const,
-    key: process.env.API_KEY!,
-    secret: process.env.API_KEY_SECRET!,
-    token: process.env.OATH_TOKEN_KEY!,
-    tokenSecret: process.env.OATH_TOKEN_SECRET!,
-  };
-
-  // Add interceptor that signs requests
-  addOAuthInterceptor(client, options);
-
-  let response: postTweetData;
-  let attemptsLeft = 5;
-
-  do {
-    response = await client
-      .post("https://api.twitter.com/2/tweets", { text: tweet })
-      .then((response) => {
-        return { id: response.data.data.id };
-      })
-      .catch((err) => {
-        console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
-        );
-        if (err.response) {
-          return {
-            limitReached: err.response.status === TOO_MANY_REQUESTS,
-            limitResetMs: parseInt(err.response.headers["x-rate-limit-reset"]),
-          };
-        } else {
-          return { noResponse: true };
-        }
-      });
-    if (response.limitReached) await sleep(response.limitResetMs!);
-    if (response.noResponse) await sleep(5000);
-    attemptsLeft--;
-  } while (!response.id && attemptsLeft > 0);
-
+  const response = await base_bot_post("https://api.twitter.com/2/tweets", {
+    text: tweet,
+  });
   return response.id || undefined;
 };

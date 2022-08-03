@@ -112,7 +112,7 @@ async function main() {
   console.log("Bot started...");
   //   const dailyTweetScheduler = setInterval(scheduleTweets, 86400000);
   //   const dailyMonumentSceduler = setInterval(scheduleMonument, 86400000);
-  await post_tweet("Test 6");
+  await post_tweet("Test 7: base_func");
   // ... you will write your Prisma Client queries here
 }
 

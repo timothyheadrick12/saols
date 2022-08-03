@@ -23,107 +23,71 @@
 import axios from "axios";
 import addOAuthInterceptor from "axios-oauth-1.0a";
 import { sleep } from "../sleep";
-
-export interface postStreamFilterResponse {
-  success?: boolean;
-  limitReached?: boolean;
-  limitResetMs?: number;
-  noResponse?: boolean;
-}
+import {
+  base_app_post,
+  default_app_get,
+  stream_app_get,
+} from "./base_requests";
 
 export const add_rule = async (
   filter: string,
   tag: string
 ): Promise<boolean> => {
-  const TOO_MANY_REQUESTS = 429;
-  // Create a client whose requests will be signed
+  const response = await base_app_post(
+    "https://api.twitter.com/2/tweets/search/stream/rules",
+    {
+      add: [{ value: filter, tag: tag }],
+    }
+  );
 
-  let response: postStreamFilterResponse;
-  let attemptsLeft = 5;
-
-  do {
-    response = await axios
-      .post(
-        "https://api.twitter.com/2/tweets/search/stream/rules",
-        {
-          add: [{ value: filter, tag: tag }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.BEARER_TOKEN!}`,
-          },
-        }
-      )
-      .then((response) => {
-        return { success: true };
-      })
-      .catch((err) => {
-        console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
-        );
-        if (err.response) {
-          return {
-            limitReached: err.response.status === TOO_MANY_REQUESTS,
-            limitResetMs: parseInt(err.response.headers["x-rate-limit-reset"]),
-          };
-        } else {
-          return { noResponse: true };
-        }
-      });
-    if (response.limitReached) await sleep(response.limitResetMs!);
-    if (response.noResponse) await sleep(5000);
-    attemptsLeft--;
-  } while (!response.success && attemptsLeft > 0);
-
-  return response.success || false;
+  return response[0].id || undefined;
 };
 
-export interface GetStreamFiltersResponse {
-  ids?: any[];
-  limitReached?: boolean;
-  limitResetMs?: number;
-  noResponse?: boolean;
-}
+export const get_rule_ids = async () => {
+  const response = await default_app_get(
+    "https://api.twitter.com/2/tweets/search/stream/rules"
+  );
 
-const remove_rules = async () => {
-  const TOO_MANY_REQUESTS = 429;
-  // Create a client whose requests will be signed
-
-  let response: GetStreamFiltersResponse;
-  let attemptsLeft = 5;
-
-  do {
-    response = await axios
-      .get("https://api.twitter.com/2/tweets/search/stream/rules", {
-        headers: {
-          Authorization: `Bearer ${process.env.BEARER_TOKEN!}`,
-        },
-      })
-      .then((response) => {
-        return { ids: response.data.data };
-      })
-      .catch((err) => {
-        console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
-        );
-        if (err.response) {
-          return {
-            limitReached: err.response.status === TOO_MANY_REQUESTS,
-            limitResetMs: parseInt(err.response.headers["x-rate-limit-reset"]),
-          };
-        } else {
-          return { noResponse: true };
-        }
-      });
-    if (response.limitReached) await sleep(response.limitResetMs!);
-    if (response.noResponse) await sleep(5000);
-    attemptsLeft--;
-  } while (!response.ids && attemptsLeft > 0);
-
-  if (!response.ids) {
+  if (response === undefined) {
     console.log(
       "[Failed to get filter ids at (" + new Date().toUTCString() + ")]"
     );
-    return;
+    return undefined;
+  } else if (response.length === 0) {
+    console.log(
+      "[Success, but got no filter ids at (" + new Date().toUTCString() + ")]"
+    );
+    return [];
   }
+  const responseIds = response.map((dataObject: any) => dataObject.id);
+
+  return responseIds;
+};
+
+//accepts a variable number of rule ids to remove
+export const remove_rules = async (...ids: string[]) => {
+  const response = await base_app_post(
+    "https://api.twitter.com/2/tweets/search/stream/rules",
+    {
+      delete: { ids: [ids] },
+    }
+  );
+
+  return response !== undefined;
+};
+
+export const stream_connect = async () => {
+  const respoonse = await stream_app_get(
+    "https://api.twitter.com/2/tweets/search/stream"
+  );
+
+  //   const stream = response;
+
+  //   stream.on("data", (data) => {
+  //     console.log(data);
+  //   });
+
+  //   stream.on("end", () => {
+  //     console.log("stream done");
+  //   });
 };
