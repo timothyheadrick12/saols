@@ -20,9 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import axios from "axios";
-import addOAuthInterceptor from "axios-oauth-1.0a";
-import { sleep } from "../sleep";
+import { io } from "socket.io-client";
 import {
   base_app_post,
   default_app_get,
@@ -77,9 +75,24 @@ export const remove_rules = async (...ids: string[]) => {
 };
 
 export const stream_connect = async () => {
-  const respoonse = await stream_app_get(
-    "https://api.twitter.com/2/tweets/search/stream"
-  );
+  const socket = io("https://api.twitter.com/2/tweets/sample/stream", {
+    extraHeaders: {
+      Authorization: `Bearer ${process.env.BEARER_TOKEN!}`,
+    },
+    transports: ["websocket"],
+  });
+
+  socket.on("connect", () => {
+    console.log("Connected!");
+  });
+
+  socket.on("data", (data) => {
+    console.log(data);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log(err);
+  });
 
   //   const stream = response;
 
