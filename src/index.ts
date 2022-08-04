@@ -26,15 +26,32 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 import post_tweet from "./requests/post_tweet";
 
 import { PrismaClient, Tweet } from "@prisma/client";
+import { add_rule, stream_connect } from "./requests/filtered_stream";
+import { sleep } from "./sleep";
+import { Client, auth } from "twitter-api-sdk";
+import { msUntilReset, msUntilTime } from "./time";
 
-const RANDOM_MARKET_CHANCE = 0.2;
+export interface Event {
+  function: () => void;
+  conversationId: string;
+}
+
+const client = new Client(process.env.BEARER_TOKEN!);
+
+const RANDOM_MARKET_CHANCE = 0.2; //chance a market occurs for the random event
+let currentEvents: Event[];
+let dailyResetInterval: NodeJS.Timer;
 
 const prisma = new PrismaClient();
 
-const msUntilTime = (date: Date): number => {
-  var now = new Date() as any;
-  var millisTillTime = (date as any) - now;
-  return millisTillTime;
+const dailyResetTasks = async () => {
+  const getRules = await client.tweets.getRules();
+  const ruleIds = getRules.data.map((rule: any) => rule.id);
+  await client.tweets.addOrDeleteRules({
+    delete: {
+      ids: ruleIds,
+    },
+  });
 };
 
 const marketEvent = async (text: string) => {};
@@ -48,8 +65,17 @@ const encounterEvent = async (text: string) => {
     return;
   }
 
-  const streamFilter = `conversation_id:${encounterTweetId}`;
-  const streamTag = `from ${encounterTweetId} conversation`;
+  const streamFilter = `conversation_id:${encounterTweetId} #saols`;
+  const streamTag = `conversation-${encounterTweetId}`;
+
+  const addRuleResponse = await client.tweets.addOrDeleteRules({
+    add: [
+      {
+        value: streamFilter,
+        tag: streamTag,
+      },
+    ],
+  });
 };
 
 const handleEventTweet = async (tweet: Tweet) => {};
@@ -108,11 +134,46 @@ const scheduleTweets = async () => {
   });
 };
 
+const tweetDispatcher = (tweet: any): void => {};
+
 async function main() {
   console.log("Bot started...");
+  setTimeout(() => {
+    dailyResetInterval = setInterval(dailyResetTasks, 86400000);
+  }, msUntilReset());
   //   const dailyTweetScheduler = setInterval(scheduleTweets, 86400000);
   //   const dailyMonumentSceduler = setInterval(scheduleMonument, 86400000);
-  await post_tweet("Test 7: base_func");
+  const tweetId = await post_tweet("Test 44: stream_test + rules");
+  const getRules = await client.tweets.getRules();
+  if (getRules.data) {
+    const ruleIds = getRules.data.map((rule: any) => rule.id);
+    await client.tweets.addOrDeleteRules({
+      delete: {
+        ids: ruleIds,
+      },
+    });
+  }
+  const response = await client.tweets.addOrDeleteRules({
+    add: [
+      {
+        value: `conversation_id:${tweetId} #linkstart`,
+        tag: `conversation-${tweetId}`,
+      },
+    ],
+  });
+  await sleep(3000);
+  console.log(await client.tweets.getRules());
+
+  (async () => {
+    const stream = client.tweets.searchStream({
+      expansions: ["author_id"],
+    });
+    for await (const tweet of stream) {
+      tweetDispatcher(tweet);
+    }
+  })();
+  console.log("HERE");
+
   // ... you will write your Prisma Client queries here
 }
 

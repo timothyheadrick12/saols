@@ -40,11 +40,12 @@ export const base_app_get = async (
       })
       .catch((err) => {
         console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
+          "[app_get error at (" + new Date().toUTCString() + ")]\n" + err
         );
         if (err.response) {
           limitReached = err.response.status === TOO_MANY_REQUESTS;
           limitResetMs = parseInt(err.response.headers["x-rate-limit-reset"]);
+          console.log(`Time to wait: ${limitResetMs}`);
         } else {
           noResponse = true;
         }
@@ -85,11 +86,13 @@ export const base_app_post = async (
       })
       .catch((err) => {
         console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
+          "[app_post error at (" + new Date().toUTCString() + ")]\n" + err
         );
         if (err.response) {
+          console.log(err.response);
           limitReached = err.response.status === TOO_MANY_REQUESTS;
           limitResetMs = parseInt(err.response.headers["x-rate-limit-reset"]);
+          console.log(`Time to wait: ${limitResetMs}`);
         } else {
           noResponse = true;
         }
@@ -139,11 +142,12 @@ export const base_bot_post = async (
       })
       .catch((err) => {
         console.log(
-          "[Request Error At (" + new Date().toUTCString() + ")]\n" + err
+          "[bot_post error at (" + new Date().toUTCString() + ")]\n" + err
         );
         if (err.response) {
           limitReached = err.response.status === TOO_MANY_REQUESTS;
           limitResetMs = parseInt(err.response.headers["x-rate-limit-reset"]);
+          console.log(`Time to wait: ${limitResetMs}`);
         } else {
           noResponse = true;
         }
@@ -153,6 +157,7 @@ export const base_bot_post = async (
       await sleep(5000);
       attemptsLeft--;
     }
+    console.log(response);
   } while (!response && attemptsLeft > 0);
 
   return response;
