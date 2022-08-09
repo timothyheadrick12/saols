@@ -20,3 +20,17 @@ export const msUntilReset = (): number => {
   msUntilReset = msUntilReset < 0 ? msUntilReset + 86400000 : msUntilReset;
   return msUntilReset;
 };
+
+export const resetTimeForDate = (date = new Date() as any): Date => {
+  let reset = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    DAILY_RESET_TIME,
+    0,
+    0
+  ) as any;
+  const msBetweenTimes = reset - date;
+  reset = msBetweenTimes < 0 ? reset + 86400000 : reset;
+  return reset;
+};

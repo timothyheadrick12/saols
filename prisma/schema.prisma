@@ -24,6 +24,8 @@ model User {
     swordSkills SwordSkill[]
     betaTester Boolean @default(true)
     beater Boolean @default(false)
+    moderator Boolean @default(false)
+    admin Boolean @default(false)
 }
 
 model Weapon {
@@ -49,21 +51,44 @@ model SwordSkill {
     users User[]
 }
 
-model Tweet {
+model Boss {
     id Int @id @default(autoincrement())
-    text String
-    schedule DateTime
+    name String
+    health Int
+    event Event?
+}
+
+model Event {
+    id Int @id @default(autoincrement())
+    tweetText String
+    startDateTime DateTime
+    endDateTime DateTime
+    started Boolean @default(false)
+    finished Boolean @default(false)
+    random Boolean @default(false)
+    endsAtDailyReset Boolean @default(false)
+    Boss Boss? @relation(fields: [bossId], references: [id])
+    bossId Int? @unique
+    customHashtag String?
+    tweetId String?
+    tweetStreamRuleId String?
     type TweetType
 }
 
-model BattlePrompts {
+model BattlePrompt {
     id Int @id @default(autoincrement())
     text String
 }
 
-model MarketPrompts {
+model MarketPrompt {
     id Int @id @default(autoincrement())
     text String
+}
+
+model PermanentRule {
+    id Int @id @default(autoincrement())
+    Name String
+    tweetStreamRuleId String?
 }
 
 enum TweetType {

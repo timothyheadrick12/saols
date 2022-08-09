@@ -25,16 +25,24 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import post_tweet from "./requests/post_tweet";
 
-import { PrismaClient, Tweet } from "@prisma/client";
+import { PrismaClient, Event } from "@prisma/client";
 import { add_rule, stream_connect } from "./requests/filtered_stream";
 import { sleep } from "./sleep";
 import { Client, auth } from "twitter-api-sdk";
 import { msUntilReset, msUntilTime } from "./time";
-
-export interface Event {
-  function: () => void;
-  conversationId: string;
-}
+import {
+  getCurrentStartedEvents,
+  getEventsStartingToday,
+  getExpiredEvents,
+} from "./database/databaseQueries";
+import {
+  createRandomEvent,
+  deleteEventStreamRules,
+  scheduleEventExpirations,
+  scheduleEvents,
+  startUnstartedCurrentEvents,
+} from "./eventManagement";
+import { markEventsFinished } from "./database/databaseUpdates";
 
 const client = new Client(process.env.BEARER_TOKEN!);
 
@@ -78,9 +86,9 @@ const encounterEvent = async (text: string) => {
   });
 };
 
-const handleEventTweet = async (tweet: Tweet) => {};
+const handleEventTweet = async (event: Event) => {};
 
-const handleMessageTweet = async (tweet: Tweet) => {};
+const handleMessageTweet = async (event: Event) => {};
 
 const handleRandomEventTweet = async () => {
   if (Math.random() < RANDOM_MARKET_CHANCE) {
@@ -88,53 +96,83 @@ const handleRandomEventTweet = async () => {
   }
 };
 
-const scheduleTweets = async () => {
-  const currentTime = new Date();
-  const dayFromNow = new Date();
-  dayFromNow.setDate(dayFromNow.getDate() + 1);
-  const tweets: Tweet[] = await prisma.tweet.findMany({
-    where: {
-      schedule: {
-        gte: currentTime,
-        lt: dayFromNow,
-      },
-    },
-  });
+// const scheduleTweets = async () => {
+//   const currentTime = new Date();
+//   const dayFromNow = new Date();
+//   dayFromNow.setDate(dayFromNow.getDate() + 1);
+//   const tweets: Event[] = await prisma.event.findMany({
+//     where: {
+//       schedule: {
+//         gte: currentTime,
+//         lt: dayFromNow,
+//       },
+//     },
+//   });
 
-  const eventTweets = tweets.filter((tweet: Tweet) => tweet.type !== "MESSAGE");
-  const storyTweets = tweets.filter((tweet: Tweet) => tweet.type === "MESSAGE");
+//   const eventTweets = tweets.filter((event: Event) => event.type !== "MESSAGE");
+//   const storyTweets = tweets.filter((event: Event) => event.type === "MESSAGE");
 
-  if (!eventTweets) {
-    //if no events scheduled. Schedule a random event between now and tomorrow.
-    const msTomorrowStart = msUntilTime(
-      new Date(
-        currentTime.getFullYear(),
-        currentTime.getMonth(),
-        currentTime.getDate() + 1,
-        0,
-        0,
-        0
-      )
-    );
-    setTimeout(
-      handleRandomEventTweet,
-      Math.floor(Math.random() * msTomorrowStart)
-    );
-  } else {
-    eventTweets.forEach((tweet: Tweet) => {
-      setTimeout(
-        handleEventTweet.bind(null, tweet),
-        msUntilTime(tweet.schedule)
-      );
-    });
+//   if (!eventTweets) {
+//     //if no events scheduled. Schedule a random event between now and tomorrow.
+//     const msTomorrowStart = msUntilTime(
+//       new Date(
+//         currentTime.getFullYear(),
+//         currentTime.getMonth(),
+//         currentTime.getDate() + 1,
+//         0,
+//         0,
+//         0
+//       )
+//     );
+//     setTimeout(
+//       handleRandomEventTweet,
+//       Math.floor(Math.random() * msTomorrowStart)
+//     );
+//   } else {
+//     eventTweets.forEach((event: Event) => {
+//       setTimeout(
+//         handleEventTweet.bind(null, event),
+//         msUntilTime(event.schedule)
+//       );
+//     });
+//   }
+
+//   storyTweets.forEach((event: Event) => {
+//     setTimeout(handleEventTweet.bind(null, event), msUntilTime(event.schedule));
+//   });
+// };
+
+const dailyReset = async () => {
+  //-------------------END DAILY RESET EVENTS---------------------
+  const expiredEvents = await getExpiredEvents();
+  if (expiredEvents.length !== 0) {
+    await deleteEventStreamRules(expiredEvents);
+    await markEventsFinished(expiredEvents);
   }
 
-  storyTweets.forEach((tweet: Tweet) => {
-    setTimeout(handleEventTweet.bind(null, tweet), msUntilTime(tweet.schedule));
-  });
+  //--------------------START UNSTARTED EVENTS--------------------
+  //this shouldn't really happen unless the program crashed and restarted
+  await startUnstartedCurrentEvents();
+
+  //-----------------------SCHEDULE EVENTS------------------------
+  const eventsStartingToday = await getEventsStartingToday();
+  if (eventsStartingToday.length !== 0)
+    await scheduleEvents(eventsStartingToday);
+
+  //--------GET CURRENT EVENTS AND SCHEDULE EXPIRATIONS-----------
+  const currentEvents = await getCurrentStartedEvents();
+  scheduleEventExpirations([...eventsStartingToday, ...currentEvents]);
+
+  //----------------------SCHEDULE RANDOM EVENT-------------------
+  if (currentEvents.length === 0 && eventsStartingToday.length === 0) {
+    await createRandomEvent();
+  }
 };
 
-const tweetDispatcher = (tweet: any): void => {};
+async function newMain() {
+  const foundCreatedPermanentRule = moderationRuleExists();
+  await dailyReset();
+}
 
 async function main() {
   console.log("Bot started...");
@@ -169,7 +207,7 @@ async function main() {
       expansions: ["author_id"],
     });
     for await (const tweet of stream) {
-      tweetDispatcher(tweet);
+      //tweetDispatcher(tweet);
     }
   })();
   console.log("HERE");
