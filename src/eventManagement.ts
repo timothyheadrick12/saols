@@ -1,9 +1,7 @@
 import { Event } from "@prisma/client";
-import { eventNames } from "process";
-import { start } from "repl";
-import Client from "twitter-api-sdk";
 import {
   getCurrentUnstartedEvents,
+  getModerators,
   randomEncounterPrompt,
   randomMarketPrompt,
 } from "./database/databaseQueries";
@@ -11,12 +9,11 @@ import {
   markEventsFinished,
   markEventStarted,
 } from "./database/databaseUpdates";
+import { client } from "./requests/apiClientInit";
 import post_tweet from "./requests/post_tweet";
 import { msUntilReset, msUntilTime, resetTimeForDate } from "./time";
 
 const RANDOM_MARKET_CHANCE = 0.2; //chance a market occurs for the random event
-
-const client = new Client(process.env.BEARER_TOKEN!);
 
 export const deleteEventStreamRules = async (events: Event[]) => {
   try {
@@ -33,6 +30,7 @@ export const deleteEventStreamRules = async (events: Event[]) => {
   }
 };
 
+//TODO: Need to handle bosses and messages differently
 export const startEvent = async (event: Event) => {
   const tweetId = await post_tweet(event.tweetText);
   const response = await client.tweets.addOrDeleteRules({
@@ -112,5 +110,30 @@ export const createRandomEvent = async () => {
       ? encounterPrompt.text
       : "You wander the fields of Aincrad today.";
     event.type = "ENCOUNTER";
+  }
+};
+
+export const permanentRuleActive = async () => {
+  const currentRules = await client.tweets.getRules();
+  return currentRules.data.some((rule) => (rule.tag = "PERMANENT-MODERATION"));
+};
+
+export const createPermanentRule = async () => {
+  const moderators = await getModerators();
+  if (moderators) {
+    const moderatorUsernameRules = moderators.map(
+      (moderator) => `from:${moderator.username}`
+    );
+    const response = await client.tweets.addOrDeleteRules({
+      add: [
+        {
+          value: `${moderatorUsernameRules.join(
+            " OR "
+          )} @SAOls_bot #system_command`,
+          tag: `PERMANENT-MODERATION`,
+        },
+      ],
+    });
+    console.log(`Error while adding permanent rule: ${response.errors}`);
   }
 };

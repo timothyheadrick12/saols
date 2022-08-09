@@ -1,4 +1,4 @@
-import { BattlePrompt, Event, MarketPrompt } from "@prisma/client";
+import { BattlePrompt, Event, MarketPrompt, User } from "@prisma/client";
 import { msUntilReset, resetTimeForDate } from "../time";
 import { prisma } from "./prismaClientInit";
 
@@ -56,5 +56,13 @@ export const randomEncounterPrompt = async (): Promise<BattlePrompt | null> => {
   const numPrompts = await prisma.battlePrompt.count();
   return prisma.battlePrompt.findFirst({
     skip: Math.floor(Math.random() * numPrompts),
+  });
+};
+
+export const getModerators = async (): Promise<User[] | null> => {
+  return prisma.user.findMany({
+    where: {
+      moderator: { equals: true },
+    },
   });
 };

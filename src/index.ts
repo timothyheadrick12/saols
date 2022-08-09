@@ -36,13 +36,21 @@ import {
   getExpiredEvents,
 } from "./database/databaseQueries";
 import {
+  createPermanentRule,
   createRandomEvent,
   deleteEventStreamRules,
+  permanentRuleActive,
   scheduleEventExpirations,
   scheduleEvents,
   startUnstartedCurrentEvents,
 } from "./eventManagement";
 import { markEventsFinished } from "./database/databaseUpdates";
+import {
+  handleBossTweet,
+  handleEncounterTweet,
+  handleMarketTweet,
+  handleModerationTweet,
+} from "./tweetHandlers";
 
 const client = new Client(process.env.BEARER_TOKEN!);
 
@@ -143,6 +151,11 @@ const handleRandomEventTweet = async () => {
 // };
 
 const dailyReset = async () => {
+  //-------MAKE SURE PERMANENT RULE STILL ACTIVE------------------
+  if (!(await permanentRuleActive())) {
+    await createPermanentRule();
+  }
+
   //-------------------END DAILY RESET EVENTS---------------------
   const expiredEvents = await getExpiredEvents();
   if (expiredEvents.length !== 0) {
@@ -156,8 +169,7 @@ const dailyReset = async () => {
 
   //-----------------------SCHEDULE EVENTS------------------------
   const eventsStartingToday = await getEventsStartingToday();
-  if (eventsStartingToday.length !== 0)
-    await scheduleEvents(eventsStartingToday);
+  if (eventsStartingToday.length !== 0) scheduleEvents(eventsStartingToday);
 
   //--------GET CURRENT EVENTS AND SCHEDULE EXPIRATIONS-----------
   const currentEvents = await getCurrentStartedEvents();
@@ -165,23 +177,40 @@ const dailyReset = async () => {
 
   //----------------------SCHEDULE RANDOM EVENT-------------------
   if (currentEvents.length === 0 && eventsStartingToday.length === 0) {
-    await createRandomEvent();
+    createRandomEvent();
   }
 };
 
+const tweetDispatcher = async (tweet: any) => {
+  const ruleTags = tweet.matching_rules?.map(
+    (rule: any) => rule.tag?.split("-")[0] //only get the all caps identifier for tweet
+  );
+  if (ruleTags.include("ENCOUNTER")) handleEncounterTweet(tweet);
+  else if (ruleTags.include("MARKET")) handleMarketTweet(tweet);
+  else if (ruleTags.include("BOSS")) handleBossTweet(tweet);
+  else if (ruleTags.include("PERMANENT")) handleModerationTweet(tweet);
+};
+
 async function newMain() {
-  const foundCreatedPermanentRule = moderationRuleExists();
   await dailyReset();
+  (async () => {
+    const stream = client.tweets.searchStream({
+      backfill_minutes: 2,
+      expansions: ["author_id"],
+    });
+    for await (const tweet of stream) {
+      console.log(tweet);
+
+      tweetDispatcher(tweet);
+    }
+  })();
 }
 
 async function main() {
   console.log("Bot started...");
-  setTimeout(() => {
-    dailyResetInterval = setInterval(dailyResetTasks, 86400000);
-  }, msUntilReset());
   //   const dailyTweetScheduler = setInterval(scheduleTweets, 86400000);
   //   const dailyMonumentSceduler = setInterval(scheduleMonument, 86400000);
-  const tweetId = await post_tweet("Test 44: stream_test + rules");
+  const tweetId = await post_tweet("Test 46: timeout_test");
   const getRules = await client.tweets.getRules();
   if (getRules.data) {
     const ruleIds = getRules.data.map((rule: any) => rule.id);
@@ -201,13 +230,13 @@ async function main() {
   });
   await sleep(3000);
   console.log(await client.tweets.getRules());
-
+  setTimeout(() => console.log("Hey it worked!"), 20000);
   (async () => {
     const stream = client.tweets.searchStream({
       expansions: ["author_id"],
     });
     for await (const tweet of stream) {
-      //tweetDispatcher(tweet);
+      console.log(tweet);
     }
   })();
   console.log("HERE");

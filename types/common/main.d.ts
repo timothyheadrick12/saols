@@ -4,3 +4,8 @@ interface IMinEvent {
   endDateTime: Date;
   type: TweetType;
 }
+
+interface streamRule {
+  tag?: string;
+  value: string;
+}

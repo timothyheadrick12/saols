@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Weapon" ALTER COLUMN "name" DROP DEFAULT;
