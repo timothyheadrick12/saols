@@ -1,6 +1,5 @@
 import csv
 from math import floor
-from unicodedata import name
 
 MAX_LVL = 100
 POINTS_PER_LVL = 3
@@ -86,7 +85,7 @@ def parse_weapon_csv(file_location):
 
 
 def parse_sword_skill_csv(file_location):
-    sword_skills: list = {}
+    sword_skills: dict = {}
     cur_type = ""
     next_row_is_type = False
     with open(file_location, newline="") as csvFile:
@@ -103,6 +102,44 @@ def parse_sword_skill_csv(file_location):
             else:
                 sword_skills[cur_type].append(row)
     return sword_skills
+
+
+def add_skill_to_weapon_skill_csv(file_location, weapon_type, weapon_skill):
+    with open(file_location, "r", encoding="utf-8") as csv:
+        lines = csv.readlines()
+    for i in range(len(lines)):
+        if lines[i].find(weapon_type) != -1:
+            lines.insert(
+                i + 1,
+                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}',
+            )
+            break
+
+    with open(file_location, "w", encoding="utf-8") as csv:
+        for line in lines:
+            csv.write(line)
+
+
+def edit_skill_in_weapon_skill_csv(file_location, weapon_type, weapon_skill):
+    with open(file_location, "r", encoding="utf-8") as csv:
+        lines = csv.readlines()
+    on_correct_weapon_type = (
+        False  # in case there are duplicately named skills for different weapon types
+    )
+    for i in range(len(lines)):
+        if lines[i].find(weapon_type) != -1:
+            on_correct_weapon_type = True
+        elif lines[i].find(",,,,,") != -1:
+            on_correct_weapon_type = False
+        elif lines[i].find(weapon_skill["name"]) != -1 and on_correct_weapon_type:
+            lines[i] = (
+                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}',
+            )
+            break
+
+    with open(file_location, "w", encoding="utf-8") as csv:
+        for line in lines:
+            csv.write(line)
 
 
 def get_dmg_and_place_of_weapon_per_lvl_from_file(file_location, weapon_name):
@@ -245,15 +282,103 @@ def calc_weapon_dmg_across_lvls(provided_weapon, sword_skills):
                 cur_dmg = round(cur_dmg)
 
 
+def weapon_skill_creator(sword_skills, weapon_type):
+    exitWSCreator = False
+
+    while not exitWSCreator:
+        name = input("Enter the name of your new skill: ")
+        lvl = input("Enter lvl required to use your new skill: ")
+        atk_mul = input("Enter what the attack multiplier for each hit will be: ")
+        num_hits = input("Enter the number of hits: ")
+        min_handling = input("Enter the minimum handling required to use this skill: ")
+        spd_cost = input("Enter how much speed this skill will use: ")
+
+
+def weapon_type_skill_printer(weapon_type):
+    if len(weapon_type) > 0:
+        # format at a table for the skills
+        print("\nHere are the current skills for this weapon:\n")
+        field_names = weapon_type[0].keys()
+        format_row = "{:<15}" * len(field_names)
+        print(format_row.format(*field_names))
+        for sword_skill in weapon_type:
+            print(format_row.format(*sword_skill.values()))
+        print()
+    else:
+        print("This weapon currently has no skills.\n")
+
+
+def weapon_type_selection_menu(sword_skills):
+    sword_skills_index = 1
+    print("Select weapon type:")
+    for key in sword_skills.keys():
+        print(f"{sword_skills_index}. {key}")
+        sword_skills_index += 1
+    print()
+    weapon_type = input(f"Your choice (1-{sword_skills_index-1}): ")
+    weapon_type = list(sword_skills.keys())[int(weapon_type) - 1]
+    print(f"You selected: {weapon_type}")
+    return weapon_type
+
+
+def add_new_weapon_skill(sword_skills):
+    print(
+        """
+--------------------------------------------------------------
+==========WELCOME TO THE WEAPON SKILL CREATION TOOL===========
+--------------------------------------------------------------"""
+    )
+    exitWSTool = False
+    while not exitWSTool:
+        weapon_type = weapon_type_selection_menu(sword_skills)
+        weapon_type_skill_printer(sword_skills[weapon_type])
+        weapon_skill_creator(sword_skills, weapon_type)
+
+        exitChoice = input(
+            "Would you like to create a skill for a different weapon type? (y/n): "
+        )
+        if exitChoice.lower() in ["y", "yes"]:
+            exitWSTool = False
+        else:
+            exitWSTool = True
+
+
 def main():
     par_weapons = parse_weapon_csv(
         "../docs/par_weapon_stats.csv",
     )
     sword_skills = parse_sword_skill_csv("../docs/sword_skills_min.csv")
+    print(
+        """
+--------------------------------------------------------------
+--------------------------------------------------------------
+==========WELCOME TO THE SAO LINK START BALANCE TOOL==========
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+Select an option from the menu below by entering a number:
+1. Recalculate all balance using csv's (slow).
+2. Add a new weapon
+3. Edit an existing weapon
+4. Add a new weapon skill
+5. Edit an existing skill
+"""
+    )
+    selection = input("Your choice (1-5): ")
+    if selection == "1":
+        calc_all_weapon_par_dmg_across_lvls(par_weapons, sword_skills)
+    elif selection == "2":
+        pass
+    elif selection == "3":
+        pass
+    elif selection == "4":
+        print("You chose to add a new weapon skill")
+        add_new_weapon_skill(sword_skills)
+
     # og = get_dmg_and_place_of_weapon_per_lvl_from_file("./og.dat", "Rapier")
     # new = get_dmg_and_place_of_weapon_per_lvl_from_file("./new.dat", "Rapier")
     # compare_weapon_place_dmg_dicts(og, new)
-    calc_all_weapon_par_dmg_across_lvls(par_weapons, sword_skills)
+    #
     # calc_weapon_dmg_across_lvls(par_weapons[0], sword_skills["One-handed sword"])
 
 
