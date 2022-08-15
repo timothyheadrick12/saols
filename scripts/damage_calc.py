@@ -74,14 +74,14 @@ def calc_all_skill_comb_dmgs(
 
 
 def parse_weapon_csv(file_location):
-    empty_list: list = []
+    weapon_dict: dict = {}
     with open(file_location, newline="") as csvFile:
         csv_reader = csv.DictReader(
             csvFile, delimiter=",", quoting=csv.QUOTE_NONNUMERIC
         )
         for row in csv_reader:
-            empty_list.append(row)
-    return empty_list
+            weapon_dict[row['type']] = row
+    return weapon_dict
 
 
 def parse_sword_skill_csv(file_location):
@@ -111,7 +111,7 @@ def add_skill_to_weapon_skill_csv(file_location, weapon_type, weapon_skill):
         if lines[i].find(weapon_type) != -1:
             lines.insert(
                 i + 1,
-                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}',
+                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}\n',
             )
             break
 
@@ -142,6 +142,30 @@ def edit_skill_in_weapon_skill_csv(file_location, weapon_type, weapon_skill):
             csv.write(line)
 
 
+def get_dmg_and_place_of_all_weapons_per_lvl_from_file(file_location):
+    lvl_dict = {}
+    with open(file_location, encoding="utf-8") as dmg_file:
+        lvl = 0
+        dmg = 0
+        place = 0
+        for line in dmg_file:
+            if "LVL " in line:
+                lvl = int(
+                    line[
+                        line.index("LVL")
+                        + 4 : line.index("LVL")
+                        + 4
+                        + line[line.index("LVL") + 4 :].index("-")
+                    ]
+                )
+                lvl_dict[lvl] = {}
+            elif lvl != 0 and "AVG" not in line:
+                lvl_dict[lvl][line[line.index(".") + 2:line.index(",")]] = {
+                    "dmg": int(line[line.index("DMG") + 5 : line.index(", SPD")]),
+                    "place": int(line[0 : line.index(".")]),
+                }
+    return lvl_dict
+
 def get_dmg_and_place_of_weapon_per_lvl_from_file(file_location, weapon_name):
     lvl_dict = {}
     with open(file_location, encoding="utf-8") as dmg_file:
@@ -165,20 +189,18 @@ def get_dmg_and_place_of_weapon_per_lvl_from_file(file_location, weapon_name):
                 }
     return lvl_dict
 
-
 def compare_weapon_place_dmg_dicts(original_dict, new_dict):
     for key in original_dict.keys():
         print(
             f'LVL {key}: dmg_change: {new_dict[key]["dmg"]/original_dict[key]["dmg"] * 100}% place_change: {original_dict[key]["place"] - new_dict[key]["place"]}'
         )
 
-
 def calc_all_weapon_par_dmg_across_lvls(par_weapons, sword_skills=[]):
     for lvl in range(1, 101):
         builds = []
         available_pts = (lvl - 1) * POINTS_PER_LVL
         weapons_unlocked = [
-            weapon for weapon in par_weapons if lvl >= weapon["unlock_lvl"]
+            weapon for weapon in par_weapons.values() if lvl >= weapon["unlock_lvl"]
         ]
         # total_calcs = available_pts * len(weapons_unlocked) + len(weapons_unlocked)
         for weapon in weapons_unlocked:
@@ -253,46 +275,97 @@ def calc_all_weapon_par_dmg_across_lvls(par_weapons, sword_skills=[]):
             f"AVG DMG ACROSS ALL TOP WEAPON BUILDS: {round(total_dmg_of_top_builds/len(new_builds))}"
         )
 
-
 def calc_weapon_dmg_across_lvls(provided_weapon, sword_skills):
+    dmg_dict = {}
     for lvl in range(1, 101):
-        builds = []
         available_pts = (lvl - 1) * POINTS_PER_LVL
         weapons_unlocked = [
             weapon for weapon in [provided_weapon] if lvl >= weapon["unlock_lvl"]
         ]
-        print(f"-----------------LVL {lvl}-----------------------")
+        dmg_dict[lvl] = {}
         # total_calcs = available_pts * len(weapons_unlocked) + len(weapons_unlocked)
         for weapon in weapons_unlocked:
             weight = calc_weight_from_lvl(weapon["weight"], lvl)
+            dmg_dict[lvl][weapon['type']] = {'dmg': 0}
             for agi in range(available_pts + 1):
                 cur_agi = agi + STARTING_AGI
                 cur_str = available_pts - agi + STARTING_STR
                 handling = calc_handling(weight, cur_str)
                 spd = calc_spd(handling, cur_agi)
-                cur_dmg = calc_basic_atk_from_lvl(
+                atk_dmg = calc_basic_atk_from_lvl(
                     weapon["base_dmg"], weapon["dmg_pl"], lvl
                 )
-
                 cur_dmg = calc_best_atk_combination_dmg(
-                    spd, cur_dmg, weapon["basic_atk_cost"], handling, sword_skills
+                    spd, atk_dmg, weapon["basic_atk_cost"], handling, [
+                            sword_skill
+                            for sword_skill in sword_skills
+                            if sword_skill["lvl"] <= lvl
+                        ]
                 )
                 if handling < HANDLING_CUTOFF:
                     cur_dmg = calc_encumberment_dmg(cur_dmg, handling)
                 cur_dmg = round(cur_dmg)
+                if cur_dmg > dmg_dict[lvl][weapon["type"]]['dmg']: 
+                    dmg_dict[lvl][weapon["type"]]['dmg'] = cur_dmg
+    return dmg_dict
+
+def calculate_full_dmg_comparison(dmg_dict_original, dmg_dict_new, starting_lvl):
+    weapon_dmg_comparison = {}
+    for lvl in range(starting_lvl, 101):
+        weapon_dmg_comparison[lvl] = {}
+        for weapon in dmg_dict_new[lvl].keys():
+            weapon_dmg_comparison[lvl][weapon] = {}
+            weapon_dmg_comparison[lvl][weapon]["dmg_increase"] = round(dmg_dict_new[lvl][weapon]['dmg'] / dmg_dict_original[lvl][weapon]['dmg'] * 100, 2) - 100
+            weapon_dmg_comparison[lvl][weapon]["original_dmg"] = dmg_dict_original[lvl][weapon]['dmg']
+            weapon_dmg_comparison[lvl][weapon]["new_dmg"] = dmg_dict_new[lvl][weapon]['dmg']
+            weapon_dmg_comparison[lvl][weapon]["original_place"] = dmg_dict_original[lvl][weapon]['place']
+            for other_weapon in dmg_dict_original[lvl].values():
+                if weapon_dmg_comparison[lvl][weapon]['new_dmg'] >= other_weapon['dmg']:
+                    weapon_dmg_comparison[lvl][weapon]['new_place'] = other_weapon['place']
+                    break
+    return weapon_dmg_comparison
+
+def print_full_dmg_comparison(dmg_dict_original, dmg_dict_new, starting_lvl):
+    dmg_comparison = calculate_full_dmg_comparison(dmg_dict_original, dmg_dict_new, starting_lvl)
+    for lvl in dmg_comparison.keys():
+        print(f'--------------------LVL {lvl}--------------------')
+        for weapon in dmg_comparison[lvl].keys():
+            print(f'DMG CHANGES FOR WEAPON {weapon}:')
+            print(f'DMG CHANGE: {dmg_comparison[lvl][weapon]["original_dmg"]}->{dmg_comparison[lvl][weapon]["new_dmg"]}')
+            print(f'PERCENT DMG CHANGE: {dmg_comparison[lvl][weapon]["dmg_increase"]}%')
+            print(f'PLACEMENT CHANGE: {dmg_comparison[lvl][weapon]["original_place"]}->{dmg_comparison[lvl][weapon]["new_place"]}')
 
 
-def weapon_skill_creator(sword_skills, weapon_type):
+def weapon_skill_creator(sword_skills, weapon_type, par_weapons):
     exitWSCreator = False
+    new_sword_skills = [{}]
+    new_sword_skillsI = 0
 
     while not exitWSCreator:
-        name = input("Enter the name of your new skill: ")
-        lvl = input("Enter lvl required to use your new skill: ")
-        atk_mul = input("Enter what the attack multiplier for each hit will be: ")
-        num_hits = input("Enter the number of hits: ")
-        min_handling = input("Enter the minimum handling required to use this skill: ")
-        spd_cost = input("Enter how much speed this skill will use: ")
+        new_sword_skills[new_sword_skillsI]["name"] = input("Enter the name of your new skill: ")
+        new_sword_skills[new_sword_skillsI]["lvl"] = int(input("Enter lvl required to use your new skill: "))
+        new_sword_skills[new_sword_skillsI]["atk_mul"] = float(input("Enter what the attack multiplier for each hit will be: "))
+        new_sword_skills[new_sword_skillsI]["num_hits"] = int(input("Enter the number of hits: "))
+        new_sword_skills[new_sword_skillsI]["min_handling"] = float(input("Enter the minimum handling required to use this skill: "))
+        new_sword_skills[new_sword_skillsI]["spd_cost"] = int(input("Enter how much speed this skill will use: "))
 
+        old_dmg = get_dmg_and_place_of_all_weapons_per_lvl_from_file("./og.dat")
+        new_dmg = calc_weapon_dmg_across_lvls(par_weapons[weapon_type], [*sword_skills[weapon_type], *new_sword_skills])
+        print(print_full_dmg_comparison(old_dmg, new_dmg, new_sword_skills[new_sword_skillsI]["lvl"]))
+
+
+        exitChoice = input(
+            "Would you like to create another skill for this weapon type? (y/n): "
+        )
+        if exitChoice.lower() in ["y", "yes"]:
+            exitWSCreator = False
+        else:
+            exitWSCreator = True
+
+    for sword_skill in new_sword_skills:
+        add_skill_to_weapon_skill_csv("../docs/sword_skills_min.csv", weapon_type, sword_skill)
+
+    
 
 def weapon_type_skill_printer(weapon_type):
     if len(weapon_type) > 0:
@@ -321,7 +394,7 @@ def weapon_type_selection_menu(sword_skills):
     return weapon_type
 
 
-def add_new_weapon_skill(sword_skills):
+def add_new_weapon_skill(sword_skills, par_weapons):
     print(
         """
 --------------------------------------------------------------
@@ -332,7 +405,7 @@ def add_new_weapon_skill(sword_skills):
     while not exitWSTool:
         weapon_type = weapon_type_selection_menu(sword_skills)
         weapon_type_skill_printer(sword_skills[weapon_type])
-        weapon_skill_creator(sword_skills, weapon_type)
+        weapon_skill_creator(sword_skills, weapon_type, par_weapons)
 
         exitChoice = input(
             "Would you like to create a skill for a different weapon type? (y/n): "
@@ -370,10 +443,10 @@ Select an option from the menu below by entering a number:
     elif selection == "2":
         pass
     elif selection == "3":
-        pass
+        print(get_dmg_and_place_of_all_weapons_per_lvl_from_file("./og.dat"))
     elif selection == "4":
         print("You chose to add a new weapon skill")
-        add_new_weapon_skill(sword_skills)
+        add_new_weapon_skill(sword_skills, par_weapons)
 
     # og = get_dmg_and_place_of_weapon_per_lvl_from_file("./og.dat", "Rapier")
     # new = get_dmg_and_place_of_weapon_per_lvl_from_file("./new.dat", "Rapier")
