@@ -133,7 +133,7 @@ def edit_skill_in_weapon_skill_csv(file_location, weapon_type, weapon_skill):
             on_correct_weapon_type = False
         elif lines[i].find(weapon_skill["name"]) != -1 and on_correct_weapon_type:
             lines[i] = (
-                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}',
+                f'"{weapon_skill["name"]}",{weapon_skill["lvl"]},{weapon_skill["atk_mul"]},{weapon_skill["num_hits"]},{weapon_skill["min_handling"]},{weapon_skill["spd_cost"]}\n'
             )
             break
 
@@ -311,6 +311,7 @@ def calc_weapon_dmg_across_lvls(provided_weapon, sword_skills):
 
 def calculate_full_dmg_comparison(dmg_dict_original, dmg_dict_new, starting_lvl):
     weapon_dmg_comparison = {}
+    print(starting_lvl)
     for lvl in range(starting_lvl, 101):
         weapon_dmg_comparison[lvl] = {}
         for weapon in dmg_dict_new[lvl].keys():
@@ -353,7 +354,12 @@ def weapon_skill_creator(sword_skills, weapon_type, par_weapons):
         new_dmg = calc_weapon_dmg_across_lvls(par_weapons[weapon_type], [*sword_skills[weapon_type], *new_sword_skills])
         print(print_full_dmg_comparison(old_dmg, new_dmg, new_sword_skills[new_sword_skillsI]["lvl"]))
 
+        saveChoice = input("Would you like to save this skill? (y/n): ")
 
+        if saveChoice:
+            for sword_skill in new_sword_skills:
+                add_skill_to_weapon_skill_csv("../docs/sword_skills_min.csv", weapon_type, sword_skill)
+        
         exitChoice = input(
             "Would you like to create another skill for this weapon type? (y/n): "
         )
@@ -362,9 +368,76 @@ def weapon_skill_creator(sword_skills, weapon_type, par_weapons):
         else:
             exitWSCreator = True
 
-    for sword_skill in new_sword_skills:
-        add_skill_to_weapon_skill_csv("../docs/sword_skills_min.csv", weapon_type, sword_skill)
+    
+def weapon_skill_editor(sword_skill_index, sword_skills, weapon_type, par_weapons):
+    exitWSEditor = False
+    new_sword_skills = dict(sword_skills)
 
+    while not exitWSEditor:
+        exitFieldEditor = False
+        while not exitFieldEditor:
+            field = weapon_skill_edit_field_selection_menu(new_sword_skills[weapon_type][sword_skill_index])
+            newValue = input("Enter what you would like to change this value to: ")
+            new_sword_skills[weapon_type][sword_skill_index][field] = float(newValue)
+            exitFieldEditorChoice = input(
+            "Would you like to edit another field on this weapon skill? (y/n): "
+            )
+            if exitFieldEditorChoice.lower() in ["y", "yes"]:
+                exitFieldEditor = False
+            else:
+                exitFieldEditor = True
+
+        old_dmg = get_dmg_and_place_of_all_weapons_per_lvl_from_file("./og.dat")
+        new_dmg = calc_weapon_dmg_across_lvls(par_weapons[weapon_type], new_sword_skills[weapon_type])
+        print(print_full_dmg_comparison(old_dmg, new_dmg, int(new_sword_skills[weapon_type][sword_skill_index]["lvl"])))
+
+        saveChoice = input("Would you like to save this skill? (y/n): ")
+
+        if saveChoice:
+            edit_skill_in_weapon_skill_csv("../docs/sword_skills_min.csv", weapon_type, new_sword_skills[weapon_type][sword_skill_index])
+        
+        exitChoice = input(
+            "Would you like to edit this skill again? (y/n): "
+        )
+        if exitChoice.lower() in ["y", "yes"]:
+            exitWSEditor = False
+        else:
+            exitWSEditor = True
+
+def weapon_skill_edit_field_selection_menu(sword_skill):
+    print("Which field would you like to edit (WARNING edit 'name' not yet implemented?")
+    i = 1
+    for field_name in sword_skill.keys():
+        print(f'{i}. {field_name}')
+        i += 1
+    fieldChoice = input(f"Your choice (1-{i-1}): ")
+    field_name  = list(sword_skill.keys())[int(fieldChoice)-1]
+    print(f"You selected: {field_name}")
+    return field_name
+
+
+    """Returns the index of the sword_skill selected for the given weapon_type
+    """
+def weapon_type_skill_selection_menu(weapon_type):
+    if len(weapon_type) > 0:
+        # format at a table for the skills
+        print("\nSelect skill to edit:\n")
+        field_names = weapon_type[0].keys()
+        format_row = "{:<15}" * (len(field_names) + 1) 
+        print(format_row.format("",*field_names))
+        i = 1
+        for sword_skill in weapon_type:
+            print(format_row.format(f'{i}. ', *sword_skill.values()))
+            i +=1
+        print()
+        skillChoice = input(f"Your choice (1-{i-1}): ")
+        sword_skill = int(skillChoice) - 1
+        print(f"You selected: {weapon_type[sword_skill]['name']}")
+        return sword_skill
+
+    else:
+        print("This weapon currently has no skills.\n")
+        return -1
     
 
 def weapon_type_skill_printer(weapon_type):
@@ -415,6 +488,27 @@ def add_new_weapon_skill(sword_skills, par_weapons):
         else:
             exitWSTool = True
 
+def edit_weapon_skill(sword_skills, par_weapons):
+    print(
+        """
+--------------------------------------------------------------
+===========WELCOME TO THE WEAPON SKILL EDITOR TOOL============
+--------------------------------------------------------------"""
+    )
+    exitWSTool = False
+    while not exitWSTool:
+        weapon_type = weapon_type_selection_menu(sword_skills)
+        sword_skill_index = weapon_type_skill_selection_menu(sword_skills[weapon_type])
+        if sword_skill_index != -1:
+            weapon_skill_editor(sword_skill_index, sword_skills, weapon_type, par_weapons)
+
+        exitChoice = input(
+            "Would you like to edit a skill on a different weapon type? (y/n): "
+        )
+        if exitChoice.lower() in ["y", "yes"]:
+            exitWSTool = False
+        else:
+            exitWSTool = True
 
 def main():
     par_weapons = parse_weapon_csv(
@@ -447,6 +541,9 @@ Select an option from the menu below by entering a number:
     elif selection == "4":
         print("You chose to add a new weapon skill")
         add_new_weapon_skill(sword_skills, par_weapons)
+    elif selection == "5":
+        print("You chose to edit an existing weapon skill")
+        edit_weapon_skill(sword_skills, par_weapons)
 
     # og = get_dmg_and_place_of_weapon_per_lvl_from_file("./og.dat", "Rapier")
     # new = get_dmg_and_place_of_weapon_per_lvl_from_file("./new.dat", "Rapier")
