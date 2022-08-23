@@ -11,31 +11,57 @@ datasource db {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  username    String       @unique
-  name        String
-  lvl         Int          @default(1)
-  str         Int          @default(1)
-  agi         Int          @default(1)
-  cor         Int          @default(100)
-  weapon      Weapon       @relation(fields: [weaponId], references: [id])
-  weaponId    Int
-  items       Item[]
-  swordSkills SwordSkill[]
-  betaTester  Boolean      @default(true)
-  beater      Boolean      @default(false)
-  moderator   Boolean      @default(false)
-  admin       Boolean      @default(false)
+  id                           Int          @id @default(autoincrement())
+  username                     String       @unique
+  name                         String
+  lvl                          Int          @default(1)
+  str                          Int          @default(1)
+  agi                          Int          @default(1)
+  cor                          Int          @default(100)
+  weapon                       Weapon       @relation(fields: [weaponId], references: [id])
+  weaponId                     Int
+  items                        Item[]
+  swordSkills                  SwordSkill[]
+  betaTester                   Boolean      @default(true)
+  beater                       Boolean      @default(false)
+  moderator                    Boolean      @default(false)
+  admin                        Boolean      @default(false)
+  oneHandedSwordSkillLvl       Int          @default(1)
+  oneHandedCurvedSwordSkillLvl Int          @default(0)
+  oneHandedAxeSkillLvl         Int          @default(0)
+  twoHandedBattleAxeSkillLvl   Int          @default(0)
+  twoHandedSwordSkillLvl       Int          @default(0)
+  rapierSkillLvl               Int          @default(0)
+  daggerSkillLvl               Int          @default(1)
+  clawsSkillLvl                Int          @default(0)
+  katanaSkillLvl               Int          @default(0)
+  maceSkillLvl                 Int          @default(0)
+  spearSkillLvl                Int          @default(0)
 }
 
 model Weapon {
   id           Int            @id @default(autoincrement())
   users        User[]
   name         String
-  lvl          Int            @default(1)
+  lvl          Int
   atk          Int            @default(1)
   weight       Int            @default(25)
   MarketWeapon MarketWeapon[]
+  BaseWeapon   BaseWeapon     @relation(fields: [baseWeaponId], references: [id])
+  baseWeaponId Int
+}
+
+model BaseWeapon {
+  id              Int        @id @default(autoincrement())
+  type            WeaponType
+  weapons         Weapon[]
+  name            String
+  minLvl          Int        @default(1)
+  baseWeight      Int
+  baseAtk         Int
+  basicAtkSpdCost Int
+  damagePerLvl    Float
+  basePrice       Int
 }
 
 model Item {
@@ -47,11 +73,17 @@ model Item {
 }
 
 model SwordSkill {
-  id          Int    @id @default(autoincrement())
-  name        String
-  description String
-  power       Int
-  users       User[]
+  id                  Int        @id @default(autoincrement())
+  name                String
+  description         String
+  lvl                 Int
+  atm                 Float
+  numHits             Int
+  weaponType          WeaponType
+  handlingRequirement Float
+  spdCost             Int
+  power               Int
+  users               User[]
 }
 
 model Boss {
@@ -62,16 +94,16 @@ model Boss {
 }
 
 model Event {
-  id                Int       @id @default(autoincrement())
+  id                Int        @id @default(autoincrement())
   tweetText         String
   startDateTime     DateTime
   endDateTime       DateTime
-  started           Boolean   @default(false)
-  finished          Boolean   @default(false)
-  random            Boolean   @default(false)
-  endsAtDailyReset  Boolean   @default(false)
-  boss              Boss?     @relation(fields: [bossId], references: [id])
-  bossId            Int?      @unique
+  started           Boolean    @default(false)
+  finished          Boolean    @default(false)
+  random            Boolean    @default(false)
+  endsAtDailyReset  Boolean    @default(false)
+  boss              Boss?      @relation(fields: [bossId], references: [id])
+  bossId            Int?       @unique
   market            Market?    @relation(fields: [marketId], references: [id])
   encounter         Encounter? @relation(fields: [encounterId], references: [id])
   customHashtag     String?
@@ -134,4 +166,18 @@ enum TweetType {
   MARKET
   BOSS
   MESSAGE
+}
+
+enum WeaponType {
+  ONE_HANDED_SWORD
+  ONE_HANDED_CURVED_SWORD
+  ONE_HANDED_AXE
+  TWO_HANDED_BATTLE_AXE
+  TWO_HANDED_SWORD
+  RAPIER
+  DAGGER
+  CLAWS
+  KATANA
+  MACE
+  SPEAR
 }
