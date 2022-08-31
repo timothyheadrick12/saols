@@ -6,61 +6,92 @@ Notes for the SAOLS program
 
 1. Check if any events in the database are expired if so, make sure to remove their rules if they exist.
 2. Check if any events should already be started and have not been started.
-
-- Post tweet for event.
-- Save tweet id in database.
-- Mark event as started.
-- Add rule for event.
-
+   - Post tweet for event.
+   - Save tweet id in database.
+   - Mark event as started.
+   - Add rule for event.
 3. Schedule any events left for the day.
 4. If no events are running and no events should be running today, schedule a random event.
 5. Schedule interval to run each day at daily reset:
-
-- scheduling any events for that day and generating a random event if none are scheduled.
-- Mark any started events as done.
-
+   - scheduling any events for that day and generating a random event if none are scheduled.
+   - Mark any started events as done.
 6. Start stream (if there are any events happening).
    - Try to keep stream in a client function that can be toggled on and off.
-
-- On tweet receive, call the handleEvent function.
+   - On tweet receive, call the handleEvent function.
 
 ### handleEvent function flow
 
 1. Check database for event that is started with matching tweet_id saved.
 2. Depending on event type, call type specific function for:
-
-- **Encounter**
-
-  1.
-
-- **Market**
-
-- **Boss**
+   - **Encounter**
+   - **Market**
+   - **Boss**
 
 ## Game Mechanics
 
 - ### Encounter
-
   - An encounter has enemie(s). An enemy has a level, str, agi, and weapon\* (weapons are optional)
   - When attacking, the results are calculated as follow:
+    - All enemy stats are calculated the same as players. If an enemy has a weapon, the weapon will be the exact same level as the enemy. Enemies cannot use sword skills. If an enemy does not have a weapon, their handling is 1.
+  - In an encounter, users can reply with attack or forage.
+    - **Attack**
+      1.  Combat
+          - During combat items may be used depending on what the items effect is. See "Items" for a list of currently implemented items.
+      2.  Assuming the player survives, they receive exp, cor, and a chance at items. Enemies with weapons have a chance of dropping their weapon.
+    - **Forage**
+      1.  The player will receive more cor than possible from combat, but a significantly smaller amount of exp. There is a small chance to receive any item or weapon (at or below their lvl) currently in the game.
+      - In either of these cases if a player receives some drop(s), the bot will reply to their action tweet telling them the drop(s) they received.
+- ### Market
+  - Two items will be on sale with a limited stock for the entire player base.
+  - Items can be weapons or general items.
+  - Purchasable weapons will have three different keyword identifiers: dull, normal, well-maintained, exquisite. These keywords denote how close the weapon will be in level to the player when purchased.
+    - Dull: between [5-3 levels under the player]
+    - Normal: between [ 4-2 levels under the player]
+    - Well-maintained: between [3-1 levels under the player]
+    - Exquisite: [the players level]
+    - Generally price will increase and stock will decrease as weapons improve
+  - To buy one or both of the items players reply with a tweet containing "buy" and the numbers for the item they want to buy. For example, a player can reply with something like "I want to buy option 1 and 2."
+  - Currently, no reply mechanism is built in because of a risk of posting too many tweets and being throttled.
+- ### Boss
 
-  1. Speed calculated as:
-
-1. In an encounter, users can reply with attack or forage.
-
-- **Attack**
-
-  1.
+  - Bosses take place over the course of three tweets in one day.
+  - Players have until the boss fight is over or the end of the entire boss fight is reached to reply to each of the three tweets.
+  - Fight flow:
+    1. Tweet posted and all players are given the chance to attack, tank, or support for a limited window.
+    2. Boss will deal damage to all participants.
+    3. Next tweet is posted with an update on boss's current health and how much damage it dealt to each player.
+    4. Repeat 1-3 once.
+    5. For final tweet some special conditions take place:
+       - Any players that have not participated up to this point can reply to previous tweets to make an action that will apply to this final phase. (Ie if a player skipped the first two tweets, they could now go through all tweets and choose to "attack, tank, attack").
+  - Choosing to attack, tank, or support has the following effects (players only receive award bonuses by taking their action during that tweets original limited run):
+    - Attack: Player deals damage to the boss calculated as usual. Increases exp gain at end of boss fight significantly player gains very small chance at receiving rare drop after boss fight.
+    - Tank: Take 1.5 times what an average player would take when boss deals damage, also . moderate increase to item drop chance, cor received, and weapon skill exp for currently used weapon.
+    - Support: Player protects ten other players from dying in case of losing the boss fight. takes no damage from current phase, immunity from death for losing boss fight, slight increase to item drop chance and cor received, moderate increase to weapon skill exp for currently used weapon.
+  - If a boss fight is lost, players who never took a support action will be killed unless protected by a player that chose to support. This chance is random for now (may be guild based in the future).
+  - The damage the boss deals for each phase is based on the following formula: $dmg = [(hpa - 3*hpoftanks) * rand(0.2,0.3)] * BDC$
+    - BDC stands for boss damage coefficient, a hidden value that adds some uniqueness to how much dmg a boss does.
+    - In writing this translates to total boss damage is hp of all active saols players combined, minus three times the hp of all tanks that participated times a random value between 0.2 to 0.3, times the BDC.
+    - This is subject to change depending on the boss but acts as a baseline.
+  - Boss health is: $hp=dpta*2*BHPC$
+    - dpta is the damage per turn of all active players combined.
+    - BHPC is the boss health coefficient, which acts similarly to the BDC.
+  - dmg is just divided by all players that participated in that tweet during the time frame and dealt to each player that participated. There is no dodging in boss fights.
+  - The player that deals the killing blow on the boss will receive the last attack bonus item. This item is one of a kind for each boss. The player that receives it and the item details will be included in the boss defeated tweet.
+    - This player receives the "avenger" feat.
+    - If this player is also a beta tester, they receive the "beater" feat.
+  - The tank that contributes the most receives the "merchant" feat.
+  - If a player supports during all three phases of the boss fight they receive the "bard" feat. This feat has no effect in the current version.
+  - General rare drop item pools are also unique for each boss. Players that receive a rare drop will have their most recent action tweet replied to.
+  - All boss drops are at or above the players level (capping out at whatever the highest level player is). Levels trend closer to the player's level.
 
 - ### Players/Users
-
   - have a lvl, hp, agi, str, weapon(s), item(s), sword skill(s), and weapon skill(s)
   - A player cannot attack without a weapon by default.
     - They must have the martial arts weapon skill.
   - Each lvl a player gets 3 points to allocate to agi and str.
   - Health scales with str and lvl according to: $hp={(str+29)\over30}(248 + \sum_{i=1}^{lvl}{(2i)})$.
     - See a reference table below
-
+  - Players can receive various feats while playing SAOLS. All feats have associated effects. Many feats have their effects hidden. The effects associated with this feats may be discovered in time.
 - ### Weapons
 
   - have a lvl, weight, attack (atk), basic attack spd cost, per/lvl dmg increase, and base price
@@ -71,12 +102,11 @@ Notes for the SAOLS program
     using the following equation (ow refers to original weight or lvl 1 weight):
 
     - $w=ow+(lvl-1)(\frac{2}{3}\left(\frac{ow}{50}-1\right)^{\frac{1}{3}}+1.5\ +\frac{2}{3}\left(\frac{ow}{50}-1\right)^{3})$
-
       - For reference, here is a table of weights and their corresponding increase in real weight per lvl:
 
-      > | w        | 1    | 10   | 25   | 40   | 50   | 60   | 75   | 90   | 100  |
-      > | -------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-      > | (rw)/lvl | 0.21 | 0.54 | 0.89 | 1.10 | 1.50 | 1.90 | 2.11 | 2.46 | 2.83 |
+    > | w        | 1    | 10   | 25   | 40   | 50   | 60   | 75   | 90   | 100  |
+    > | -------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+    > | (rw)/lvl | 0.21 | 0.54 | 0.89 | 1.10 | 1.50 | 1.90 | 2.11 | 2.46 | 2.83 |
 
     - This makes light weapons stay light so agi types are effective.
     - It also makes heavy weapons only practicaly for str builds.
@@ -92,8 +122,10 @@ Notes for the SAOLS program
 - ### Sword Skills
 
   - have a lvl, attack multiplier (atm), number of hits, required weapon type, required weapon skill, minimum handling requirement, and spd cost
-  - A sword skill is unable to be unlocked until its corresponding weapon skill >= its lvl
-  - A sword skill's damage upon use: $dmg= atk*atm*numhits$
+  - A sword skill is unable to be unlocked until its corresponding weapon skill >= its lvl.
+  - A sword skill can only be used by a weapon with a lvl >= sword skill lvl.
+    - Potential update: Add durability but to weapons. Using a sword skill on a weapon that is lower level than the skill uses durability.
+  - A sword skill's damage upon use: $dmg= atk*atm*numhits$.
 
 - ### Combat
 
@@ -101,32 +133,64 @@ Notes for the SAOLS program
     - Speed depends on handling and agi (or str, agi, and weapon real_weight, but agi matters most by far).
     - $spd=h*agi+39$
   - There is also the following caveat, though, if $h < 0.7$:
-    - An extra debuff to your damage is applied: $dmg=dmg*0.01$
+    - An extra debuff to your damage is applied: $dmg=dmg*h^2$
     - This pushes players to only use weapons they can handle.
   - Turn order is simply higher speeds going before lower speeds, there is no further complexity to it.
   - On your turn, all your speed is used to attack. This will be a combination of basic attacks and sword skills.
   - Once all your speed is used, the next combatant attacks.
     - This cycle repeats until all enemies or you are defeated.
   - For each incoming attack you have a chance to dodge calculated by: $dc=1-{theirSpeed \over yourSpeed}$
-    - Of course if this is negative, you have no chance of dodging.
+    - Dodge chance is always at least 0.01 or 1%.
   - Damage ceiling
     - There is a damage ceiling for each level. This is not enforced in the sense that if you deal over
       the damage ceiling your damage is cutoff, but the game is intended to be designed in a way that
       it is not possible to pass this ceiling for your level no matter what combination of items, weapons,
       skills, and stats you have. If this damage ceiling happens to be passed for some non-bug related
       reason, that is fine.
+    - The game is designed with the intention that doing even half the damage of the damage ceiling is considered very good.
     - Boss health may take the damage ceiling into consideration.
+
+- ### Daily Reset
+
+  - All players health restored to 80% if below.
+  - The Monument of Swordsmen tweet(s) are posted, which list all players ranking sorted by total damage done in their time playing. The following information is also included for each player:
+    - their lvl, agi, and spd
+    - their cor
+    - their weapon and its stats
+    - their most used sword skill
 
 - ### Enemies
 
-  - Enemy health is calculated similar to the player's but categorized
-  - Small enemies will tend to have less health than players
-  - Medium enemies will tend to have more health than players
-  - Large enemies will tend to have much more health than players
+  - Enemy health is calculated based on: $hp=avgdpt * 3 * HPC * modifier$
+    - $avgdpt$ is the average damage per turn of entire active player base.
+    - HPC is the health coefficient that modfies enemy health based on the enemy.
+    - modifier is depending on the enemy's title.
+  - Enemy damage is calculated the same as players. Weak and normal enemies will be given random strength and agi stats based on their lvl. If they have a weapon, it will also be their level.
+  - title effects:
+    - weak: modifier is rand(0.5,0.9). Decrease cor, weapon, and exp drops.
+    - normal: modifier is 1. normal drops.
+    - strong: modifier is rand(1,1.5). Agi and Str are 10th strongest possible build. Increase cor, item, and exp drops.
+    - menacing: modifier is rand(2, 3). Agi and Str are 5th strongest possible build. Majorly increase cor, item, and exp drops. Slim chance to get rare drops.
+    - nightmare: modifier is rand(3, 5). Agi and Str are strongest possible build. Majorly increase exp drops. Massively increase cor and item drops. Moderate chance to get rare drops. Players receive the "clearer" feat if they defeat the enemy without using items.
 
 - ### Items
 
   - have a base price
+  - Current Items (items marked with "\*" can be dropped by enemies):
+    - Health potion: heals player if they would otherwise be killed by an attack. Cannot prevent one shots (ie goes from health at beginning of combat to 0 during enemy's first turn).
+    - Bread: Fully restores player health at end of the day.
+
+- ### Miscellaneous
+  - Any player that replies first to a tweet receives the "hero" feat.
+
+## Inconsistencies With SAO
+
+- Health scaling is a bit different in SAOLS
+  - Tbh in what game does a lvl 1 start at 250hp and end with only 18,600hp as a more strength-ish build? Seems whack.
+  - I would estimate that health in SAOLS is consistently about 2.5x what it would be in actual SAO.
+- Weapons in sao have durability as well as bonuses to str and agi
+  - Durability tends to be a bother especially in something less interactive like this (weapons likely wouldn't be used enough to break anyways.
+  - The str and agi bonuses significantly increase balancing concerns (maybe a future update?).
 
 ## Reference Tables
 
@@ -186,32 +250,33 @@ Notes for the SAOLS program
 
 |        |        |        |        |        |        |        |        |         |         |
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------- | ------- |
-| 1      | 2      | 3      | 4      | 5      | 6      | 7      | 8      | 9       | 10      |
+| **1**  | **2**  | **3**  | **4**  | **5**  | **6**  | **7**  | **8**  | **9**   | **10**  |
 | 540    | 583    | 630    | 680    | 735    | 793    | 857    | 925    | 1000    | 1079    |
 |        |        |        |        |        |        |        |        |         |         |
-| 11     | 12     | 13     | 14     | 15     | 16     | 17     | 18     | 19      | 20      |
+| **11** | **12** | **13** | **14** | **15** | **16** | **17** | **18** | **19**  | **20**  |
 | 1166   | 1259   | 1360   | 1469   | 1586   | 1713   | 1850   | 1998   | 2158    | 2330    |
 |        |        |        |        |        |        |        |        |         |         |
-| 21     | 22     | 23     | 24     | 25     | 26     | 27     | 28     | 29      | 30      |
+| **21** | **22** | **23** | **24** | **25** | **26** | **27** | **28** | **29**  | **30**  |
 | 2517   | 2718   | 2936   | 3171   | 3424   | 3698   | 3994   | 4314   | 4659    | 5031    |
 |        |        |        |        |        |        |        |        |         |         |
-| 31     | 32     | 33     | 34     | 35     | 36     | 37     | 38     | 39      | 40      |
+| **31** | **32** | **33** | **34** | **35** | **36** | **37** | **38** | **39**  | **40**  |
 | 5434   | 5869   | 6338   | 6845   | 7393   | 7984   | 8623   | 9313   | 10058   | 10862   |
 |        |        |        |        |        |        |        |        |         |         |
-| 41     | 42     | 43     | 44     | 45     | 46     | 47     | 48     | 49      | 50      |
+| **41** | **42** | **43** | **44** | **45** | **46** | **47** | **48** | **49**  | **50**  |
 | 11731  | 12670  | 13683  | 14778  | 15960  | 17237  | 18616  | 20105  | 21714   | 23451   |
 |        |        |        |        |        |        |        |        |         |         |
-| 51     | 52     | 53     | 54     | 55     | 56     | 57     | 58     | 59      | 60      |
+| **51** | **52** | **53** | **54** | **55** | **56** | **57** | **58** | **59**  | **60**  |
 | 25327  | 27353  | 29541  | 31905  | 34457  | 37213  | 40191  | 43406  | 46878   | 50629   |
 |        |        |        |        |        |        |        |        |         |         |
-| 61     | 62     | 63     | 64     | 65     | 66     | 67     | 68     | 69      | 70      |
+| **61** | **62** | **63** | **64** | **65** | **66** | **67** | **68** | **69**  | **70**  |
 | 54679  | 59053  | 63777  | 68880  | 74390  | 80341  | 86768  | 93710  | 101207  | 109303  |
 |        |        |        |        |        |        |        |        |         |         |
-| 71     | 72     | 73     | 74     | 75     | 76     | 77     | 78     | 79      | 80      |
+| **71** | **72** | **73** | **74** | **75** | **76** | **77** | **78** | **79**  | **80**  |
 | 118047 | 127491 | 137691 | 148706 | 160602 | 173450 | 187326 | 202313 | 218498  | 235977  |
 |        |        |        |        |        |        |        |        |         |         |
-| 81     | 82     | 83     | 84     | 85     | 86     | 87     | 88     | 89      | 90      |
+| **81** | **82** | **83** | **84** | **85** | **86** | **87** | **88** | **89**  | **90**  |
 | 254856 | 275244 | 297264 | 321045 | 346728 | 374467 | 404424 | 436778 | 471720  | 509458  |
 |        |        |        |        |        |        |        |        |         |         |
-| 91     | 92     | 93     | 94     | 95     | 96     | 97     | 98     | 99      | 100     |
+| **91** | **92** | **93** | **94** | **95** | **96** | **97** | **98** | **99**  | **100** |
+|        |
 | 550214 | 594231 | 641770 | 693111 | 748560 | 808445 | 873121 | 942970 | 1018408 | 1099881 |
