@@ -1,17 +1,14 @@
-import { Event } from "@prisma/client";
+import {Event} from '@prisma/client';
 import {
   getCurrentUnstartedEvents,
   getModerators,
   randomEncounterPrompt,
   randomMarketPrompt,
-} from "./database/databaseQueries";
-import {
-  markEventsFinished,
-  markEventStarted,
-} from "./database/databaseUpdates";
-import { client } from "./requests/apiClientInit";
-import post_tweet from "./requests/post_tweet";
-import { msUntilReset, msUntilTime, resetTimeForDate } from "./time";
+} from './database/databaseQueries';
+import {markEventsFinished, markEventStarted} from './database/databaseUpdates';
+import {client} from './requests/apiClientInit';
+import post_tweet from './requests/post_tweet';
+import {msUntilReset, msUntilTime, resetTimeForDate} from './time';
 
 const RANDOM_MARKET_CHANCE = 0.2; //chance a market occurs for the random event
 
@@ -25,7 +22,7 @@ export const deleteEventStreamRules = async (events: Event[]) => {
     });
   } catch {
     console.log(
-      "Something went wrong while trying to remove event rules from stream. Did those events include streamRuleIds?"
+      'Something went wrong while trying to remove event rules from stream. Did those events include streamRuleIds?'
     );
   }
 };
@@ -37,7 +34,7 @@ export const startEvent = async (event: Event) => {
     add: [
       {
         value: `conversation_id:${tweetId} ${
-          event.customHashtag ? event.customHashtag : "#linkstart"
+          event.customHashtag ?? '#linkstart'
         }`,
         tag: `${event.type}-${event.id}`,
       },
@@ -68,7 +65,7 @@ export const endEvent = async (event: Event) => {
     markEventsFinished([event]);
   } catch {
     console.log(
-      "Something went wrong while trying to remove a scheduled event expiration from stream. Did that event include streamRuleIds?"
+      'Something went wrong while trying to remove a scheduled event expiration from stream. Did that event include streamRuleIds?'
     );
   }
 };
@@ -93,29 +90,29 @@ export const createRandomEvent = async () => {
   const startTime =
     (new Date() as any) + Math.floor(maxStartDelay * Math.random()) + 60000; //add a minute just in case startTime is too soon
   const event: IMinEvent = {
-    tweetText: "",
+    tweetText: '',
     startDateTime: startTime,
     endDateTime: resetTimeForDate(startTime),
-    type: "ENCOUNTER",
+    type: 'ENCOUNTER',
   };
   if (Math.random() <= RANDOM_MARKET_CHANCE) {
     const marketPrompt = await randomMarketPrompt();
     event.tweetText = marketPrompt
       ? marketPrompt.text
-      : "You hang around the Town of Beginnings today."; // in case no prompts are found
-    event.type = "MARKET";
+      : 'You hang around the Town of Beginnings today.'; // in case no prompts are found
+    event.type = 'MARKET';
   } else {
     const encounterPrompt = await randomEncounterPrompt();
     event.tweetText = encounterPrompt
       ? encounterPrompt.text
-      : "You wander the fields of Aincrad today.";
-    event.type = "ENCOUNTER";
+      : 'You wander the fields of Aincrad today.';
+    event.type = 'ENCOUNTER';
   }
 };
 
 export const permanentRuleActive = async () => {
   const currentRules = await client.tweets.getRules();
-  return currentRules.data.some((rule) => (rule.tag = "PERMANENT-MODERATION"));
+  return currentRules.data.some((rule) => (rule.tag = 'PERMANENT-MODERATION'));
 };
 
 export const createPermanentRule = async () => {
@@ -128,7 +125,7 @@ export const createPermanentRule = async () => {
       add: [
         {
           value: `${moderatorUsernameRules.join(
-            " OR "
+            ' OR '
           )} @SAOls_bot #system_command`,
           tag: `PERMANENT-MODERATION`,
         },

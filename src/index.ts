@@ -19,22 +19,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import * as dotenv from "dotenv"; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import path from "path";
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+import path from 'path';
+dotenv.config({path: path.resolve(__dirname, '../.env')});
 
-import post_tweet from "./requests/post_tweet";
+import post_tweet from './requests/post_tweet';
 
-import { PrismaClient, Event } from "@prisma/client";
-import { add_rule, stream_connect } from "./requests/filtered_stream";
-import { sleep } from "./sleep";
-import { Client, auth } from "twitter-api-sdk";
-import { msUntilReset, msUntilTime } from "./time";
+import {PrismaClient, Event} from '@prisma/client';
+import {add_rule, stream_connect} from './requests/filtered_stream';
+import {sleep} from './sleep';
+import {Client, auth} from 'twitter-api-sdk';
+import {msUntilReset, msUntilTime} from './time';
 import {
   getCurrentStartedEvents,
   getEventsStartingToday,
   getExpiredEvents,
-} from "./database/databaseQueries";
+} from './database/databaseQueries';
 import {
   createPermanentRule,
   createRandomEvent,
@@ -43,14 +43,14 @@ import {
   scheduleEventExpirations,
   scheduleEvents,
   startUnstartedCurrentEvents,
-} from "./eventManagement";
-import { markEventsFinished } from "./database/databaseUpdates";
+} from './eventManagement';
+import {markEventsFinished} from './database/databaseUpdates';
 import {
   handleBossTweet,
   handleEncounterTweet,
   handleMarketTweet,
   handleModerationTweet,
-} from "./tweetHandlers";
+} from './tweetHandlers';
 
 const client = new Client(process.env.BEARER_TOKEN!);
 
@@ -59,96 +59,6 @@ let currentEvents: Event[];
 let dailyResetInterval: NodeJS.Timer;
 
 const prisma = new PrismaClient();
-
-const dailyResetTasks = async () => {
-  const getRules = await client.tweets.getRules();
-  const ruleIds = getRules.data.map((rule: any) => rule.id);
-  await client.tweets.addOrDeleteRules({
-    delete: {
-      ids: ruleIds,
-    },
-  });
-};
-
-const marketEvent = async (text: string) => {};
-
-const encounterEvent = async (text: string) => {
-  const encounterTweetId = await post_tweet(text);
-  if (!encounterTweetId) {
-    console.log(
-      "[ENCOUNTER TWEET FAILED TO POST (" + new Date().toUTCString() + ")]"
-    );
-    return;
-  }
-
-  const streamFilter = `conversation_id:${encounterTweetId} #saols`;
-  const streamTag = `conversation-${encounterTweetId}`;
-
-  const addRuleResponse = await client.tweets.addOrDeleteRules({
-    add: [
-      {
-        value: streamFilter,
-        tag: streamTag,
-      },
-    ],
-  });
-};
-
-const handleEventTweet = async (event: Event) => {};
-
-const handleMessageTweet = async (event: Event) => {};
-
-const handleRandomEventTweet = async () => {
-  if (Math.random() < RANDOM_MARKET_CHANCE) {
-  } else {
-  }
-};
-
-// const scheduleTweets = async () => {
-//   const currentTime = new Date();
-//   const dayFromNow = new Date();
-//   dayFromNow.setDate(dayFromNow.getDate() + 1);
-//   const tweets: Event[] = await prisma.event.findMany({
-//     where: {
-//       schedule: {
-//         gte: currentTime,
-//         lt: dayFromNow,
-//       },
-//     },
-//   });
-
-//   const eventTweets = tweets.filter((event: Event) => event.type !== "MESSAGE");
-//   const storyTweets = tweets.filter((event: Event) => event.type === "MESSAGE");
-
-//   if (!eventTweets) {
-//     //if no events scheduled. Schedule a random event between now and tomorrow.
-//     const msTomorrowStart = msUntilTime(
-//       new Date(
-//         currentTime.getFullYear(),
-//         currentTime.getMonth(),
-//         currentTime.getDate() + 1,
-//         0,
-//         0,
-//         0
-//       )
-//     );
-//     setTimeout(
-//       handleRandomEventTweet,
-//       Math.floor(Math.random() * msTomorrowStart)
-//     );
-//   } else {
-//     eventTweets.forEach((event: Event) => {
-//       setTimeout(
-//         handleEventTweet.bind(null, event),
-//         msUntilTime(event.schedule)
-//       );
-//     });
-//   }
-
-//   storyTweets.forEach((event: Event) => {
-//     setTimeout(handleEventTweet.bind(null, event), msUntilTime(event.schedule));
-//   });
-// };
 
 const dailyReset = async () => {
   //-------MAKE SURE PERMANENT RULE STILL ACTIVE------------------
@@ -183,12 +93,12 @@ const dailyReset = async () => {
 
 const tweetDispatcher = async (tweet: any) => {
   const ruleTags = tweet.matching_rules?.map(
-    (rule: any) => rule.tag?.split("-")[0] //only get the all caps identifier for tweet
+    (rule: any) => rule.tag?.split('-')[0] //only get the all caps identifier for tweet
   );
-  if (ruleTags.include("ENCOUNTER")) handleEncounterTweet(tweet);
-  else if (ruleTags.include("MARKET")) handleMarketTweet(tweet);
-  else if (ruleTags.include("BOSS")) handleBossTweet(tweet);
-  else if (ruleTags.include("PERMANENT")) handleModerationTweet(tweet);
+  if (ruleTags.include('ENCOUNTER')) handleEncounterTweet(tweet);
+  else if (ruleTags.include('MARKET')) handleMarketTweet(tweet);
+  else if (ruleTags.include('BOSS')) handleBossTweet(tweet);
+  else if (ruleTags.include('PERMANENT')) handleModerationTweet(tweet);
 };
 
 async function newMain() {
@@ -196,7 +106,7 @@ async function newMain() {
   (async () => {
     const stream = client.tweets.searchStream({
       backfill_minutes: 2,
-      expansions: ["author_id"],
+      expansions: ['author_id'],
     });
     for await (const tweet of stream) {
       console.log(tweet);
@@ -207,10 +117,10 @@ async function newMain() {
 }
 
 async function main() {
-  console.log("Bot started...");
+  console.log('Bot started...');
   //   const dailyTweetScheduler = setInterval(scheduleTweets, 86400000);
   //   const dailyMonumentSceduler = setInterval(scheduleMonument, 86400000);
-  const tweetId = await post_tweet("Test 46: timeout_test");
+  const tweetId = await post_tweet('Test 46: timeout_test');
   const getRules = await client.tweets.getRules();
   if (getRules.data) {
     const ruleIds = getRules.data.map((rule: any) => rule.id);
@@ -230,16 +140,16 @@ async function main() {
   });
   await sleep(3000);
   console.log(await client.tweets.getRules());
-  setTimeout(() => console.log("Hey it worked!"), 20000);
+  setTimeout(() => console.log('Hey it worked!'), 20000);
   (async () => {
     const stream = client.tweets.searchStream({
-      expansions: ["author_id"],
+      expansions: ['author_id'],
     });
     for await (const tweet of stream) {
       console.log(tweet);
     }
   })();
-  console.log("HERE");
+  console.log('HERE');
 
   // ... you will write your Prisma Client queries here
 }

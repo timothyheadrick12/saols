@@ -18,6 +18,7 @@ model User {
   str                          Int          @default(1)
   agi                          Int          @default(1)
   cor                          Int          @default(100)
+  exp                          Int          @default(0)
   totalDamageDone              Int          @default(0)
   damagePerTurn                Int          @default(0)
   weapon                       Weapon       @relation(fields: [weaponId], references: [id])
@@ -34,16 +35,27 @@ model User {
   moderator                    Boolean      @default(false)
   admin                        Boolean      @default(false)
   oneHandedSwordSkillLvl       Int          @default(1)
+  oneHandedSwordSkillExp       Int          @default(0)
   oneHandedCurvedSwordSkillLvl Int          @default(0)
+  oneHandedCurvedSwordSkillExp Int          @default(0)
   oneHandedAxeSkillLvl         Int          @default(0)
+  oneHandedAxeSkillExp         Int          @default(0)
   twoHandedBattleAxeSkillLvl   Int          @default(0)
+  twoHandedBattleAxeSkillExp   Int          @default(0)
   twoHandedSwordSkillLvl       Int          @default(0)
+  twoHandedSwordSkillExp       Int          @default(0)
   rapierSkillLvl               Int          @default(0)
+  rapierSkillExp               Int          @default(0)
   daggerSkillLvl               Int          @default(1)
+  daggerSkillExp               Int          @default(0)
   clawsSkillLvl                Int          @default(0)
+  clawsSkillExp                Int          @default(0)
   katanaSkillLvl               Int          @default(0)
+  katanaSkillExp               Int          @default(0)
   maceSkillLvl                 Int          @default(0)
+  maceSkillExp                 Int          @default(0)
   spearSkillLvl                Int          @default(0)
+  spearSkillExp                Int          @default(0)
 }
 
 model Weapon {
@@ -119,7 +131,7 @@ model Event {
   tweetStreamRuleId String?
   type              TweetType
   marketId          Int?
-  encounterId       Int?
+  encounterId       Int?       @unique
 }
 
 model Market {
@@ -150,7 +162,7 @@ model MarketWeapon {
 model Encounter {
   id      Int     @id @default(autoincrement())
   enemies Enemy[]
-  Event   Event[]
+  Event   Event?
 }
 
 model Enemy {
