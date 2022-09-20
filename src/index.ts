@@ -92,13 +92,13 @@ const dailyReset = async () => {
 };
 
 const tweetDispatcher = async (tweet: any) => {
-  const ruleTags = tweet.matching_rules?.map(
+  const ruleTags: string[] = tweet.matching_rules?.map(
     (rule: any) => rule.tag?.split('-')[0] //only get the all caps identifier for tweet
   );
-  if (ruleTags.include('ENCOUNTER')) handleEncounterTweet(tweet);
-  else if (ruleTags.include('MARKET')) handleMarketTweet(tweet);
-  else if (ruleTags.include('BOSS')) handleBossTweet(tweet);
-  else if (ruleTags.include('PERMANENT')) handleModerationTweet(tweet);
+  if (ruleTags.includes('ENCOUNTER')) handleEncounterTweet(tweet, prisma);
+  else if (ruleTags.includes('MARKET')) handleMarketTweet(tweet, prisma);
+  else if (ruleTags.includes('BOSS')) handleBossTweet(tweet, prisma);
+  else if (ruleTags.includes('PERMANENT')) handleModerationTweet(tweet, prisma);
 };
 
 async function newMain() {

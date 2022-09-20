@@ -56,6 +56,7 @@ model User {
   maceSkillExp                 Int          @default(0)
   spearSkillLvl                Int          @default(0)
   spearSkillExp                Int          @default(0)
+  participatedEvents           Event[]
 }
 
 model Weapon {
@@ -132,6 +133,7 @@ model Event {
   type              TweetType
   marketId          Int?
   encounterId       Int?       @unique
+  participants      User[]
 }
 
 model Market {
@@ -185,6 +187,24 @@ model BattlePrompt {
 model MarketPrompt {
   id   Int    @id @default(autoincrement())
   text String
+}
+
+model ParCor {
+  id    Int @id @default(autoincrement())
+  lvl   Int @unique
+  value Int
+}
+
+model ParUserExp {
+  id    Int @id @default(autoincrement())
+  lvl   Int @unique
+  value Int
+}
+
+model ParWeaponExp {
+  id    Int @id @default(autoincrement())
+  lvl   Int @unique
+  value Int
 }
 
 enum TweetType {

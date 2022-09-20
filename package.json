@@ -17,6 +17,7 @@
     "@types/node": "^18.6.3",
     "axios": "^0.27.2",
     "axios-oauth-1.0a": "^0.3.5",
+    "csv": "^6.2.0",
     "dotenv": "^16.0.1",
     "socket.io-client": "^4.5.1",
     "twitter-api-sdk": "^1.1.0",
