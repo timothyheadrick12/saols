@@ -1,11 +1,11 @@
-import { Event } from "@prisma/client";
-import { prisma } from "./prismaClientInit";
+import {Event, User} from '@prisma/client';
+import {prisma} from './prismaClientInit';
 
 export const markEventsFinished = async (events: Event[]) => {
   const ids = events.map((event: Event) => event.id);
   prisma.event.updateMany({
-    where: { id: { in: ids } },
-    data: { finished: true },
+    where: {id: {in: ids}},
+    data: {finished: true},
   });
 };
 
@@ -29,6 +29,29 @@ export const markEventStarted = async (
       started: true,
       tweetId: tweetId,
       tweetStreamRuleId: ruleId,
+    },
+  });
+};
+
+/**
+ * Desc: Updates a user's name and username. Useful for when they
+ * change their display name or username.
+ * @param id The id of the user to be updated
+ * @param name The optional new display name of the user
+ * @param username The optional new username of the user
+ */
+export const updateNames = async (
+  user: User,
+  name?: string,
+  username?: string
+) => {
+  prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      username: username ?? user.username,
+      name: name ?? user.name,
     },
   });
 };

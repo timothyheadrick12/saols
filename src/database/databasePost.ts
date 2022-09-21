@@ -12,11 +12,13 @@ export const createRandomEvent = async (event: IMinEvent) => {
 };
 
 export const createUserDefault = async (
+  id: string,
   username: string,
   name: string
 ): Promise<User> => {
   return prisma.user.create({
     data: {
+      id: id,
       username: username,
       name: name,
       weaponId: parseInt(process.env.DEFAULT_WEAPON!),

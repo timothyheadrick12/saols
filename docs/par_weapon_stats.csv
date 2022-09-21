@@ -1,12 +1,12 @@
-"name","type","weight","base_dmg","cost","dmg_pl","basic_atk_cost","unlock_lvl"
-"Steel Sword","One-handed sword",33,20,25,10,24,1
-"Scimitar","One-handed curved sword",25,17,20,7.5,19,5
-"Steel Axe","One-handed axe",40,35,20,13,26,10
-"Steel Battle Axe","Two-handed battle axe",90,150,35,55,36,25
-"Steel Great Sword","Two-handed sword",75,100,35,25,26,10
-"Rapier","Rapier",15,9,25,4,12,15
-"Dagger","Dagger",10,4,10,2.5,9,1
-"Claws","Claws",5,3,15,1.2,4,50
-"Katana","Katana",38,35,35,14,30,20
-"Iron Mace","Mace",60,35,30,16,30,35
-"Steal Spear","Spear",45,75,15,16,28,25
+"name","type","weight","base_dmg","cost_mul","dmg_pl","basic_atk_cost","unlock_lvl"
+"Steel Sword","One-handed sword",33,20,6,10,24,1
+"Scimitar","One-handed curved sword",25,17,5,7.5,19,5
+"Steel Axe","One-handed axe",40,35,5,13,26,10
+"Steel Battle Axe","Two-handed battle axe",90,150,9,55,36,25
+"Steel Great Sword","Two-handed sword",75,100,9,25,26,10
+"Rapier","Rapier",15,9,6,4,12,15
+"Dagger","Dagger",10,4,2.5,2.5,9,1
+"Claws","Claws",5,3,3,1.2,4,50
+"Katana","Katana",38,35,9,14,30,20
+"Iron Mace","Mace",60,35,7,16,30,35
+"Steal Spear","Spear",45,75,4,16,28,25

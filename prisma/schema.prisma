@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id                           Int          @id @default(autoincrement())
+  id                           String       @id
   username                     String       @unique
   name                         String
   lvl                          Int          @default(1)
@@ -21,8 +21,11 @@ model User {
   exp                          Int          @default(0)
   totalDamageDone              Int          @default(0)
   damagePerTurn                Int          @default(0)
+  //equiped weapon
   weapon                       Weapon       @relation(fields: [weaponId], references: [id])
   weaponId                     Int
+  //all owned weapons
+  weaponInventory              Weapon[]     @relation(name: "WeaponInventory")
   items                        Item[]
   swordSkills                  SwordSkill[]
   betaTester                   Boolean      @default(true)
@@ -61,7 +64,10 @@ model User {
 
 model Weapon {
   id           Int            @id @default(autoincrement())
-  users        User[]
+  users        User[] //Users with this weapon equiped
+  //Users that have this weapon in their inventory.
+  //May or may not be equiped.
+  owners       User[]         @relation(name: "WeaponInventory")
   name         String
   lvl          Int
   atk          Int            @default(1)
@@ -82,7 +88,7 @@ model BaseWeapon {
   baseAtk         Int
   basicAtkSpdCost Int
   damagePerLvl    Float
-  basePrice       Int
+  basePriceMul    Float
 }
 
 model Item {

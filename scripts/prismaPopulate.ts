@@ -41,7 +41,7 @@ fs.createReadStream('./docs/par_weapon_stats.csv')
           baseAtk: parseInt(row[3]),
           basicAtkSpdCost: parseInt(row[6]),
           damagePerLvl: parseInt(row[5]),
-          basePrice: parseInt(row[4]),
+          basePriceMul: parseInt(row[4]),
         },
       })
       .then((baseWeapon) => {

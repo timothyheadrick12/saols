@@ -92,12 +92,12 @@ export const getModerators = async (): Promise<User[] | null> => {
   });
 };
 
-//desc: Get a user from their username
+//desc: Get a user from their unique id
 //post: return Promise<User>
-export const getUser = async (username: string) => {
+export const getUser = async (id: string) => {
   return prisma.user.findUnique({
     where: {
-      username: username,
+      id: id,
     },
     include: {
       participatedEvents: {
@@ -105,6 +105,32 @@ export const getUser = async (username: string) => {
           id: true,
         },
       },
+    },
+  });
+};
+
+/**
+ * Desc: Get the parCor object for a given level.
+ * @param level
+ * @returns Promise<parCor>
+ */
+export const getParCor = async (level: number) => {
+  return prisma.parCor.findUnique({
+    where: {
+      lvl: level,
+    },
+  });
+};
+
+/**
+ * Desc: Get the parExp object for a given level.
+ * @param level
+ * @returns Promise<parExp>
+ */
+export const getParExp = async (level: number) => {
+  return prisma.parUserExp.findUnique({
+    where: {
+      lvl: level,
     },
   });
 };
