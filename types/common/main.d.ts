@@ -1,11 +1,24 @@
-interface IMinEvent {
-  tweetText: string;
-  startDateTime: Date;
-  endDateTime: Date;
-  type: TweetType;
-}
+import {BaseWeapon, TweetType, User, Weapon} from '@prisma/client';
 
-interface streamRule {
-  tag?: string;
-  value: string;
+declare global {
+  interface IMinEvent {
+    tweetText: string;
+    startDateTime: Date;
+    endDateTime: Date;
+    type: TweetType;
+  }
+
+  interface streamRule {
+    tag?: string;
+    value: string;
+  }
+
+  interface ExpandedUser extends User {
+    weapon: Weapon & {
+      BaseWeapon: BaseWeapon;
+    };
+    participatedEvents: {
+      id: number;
+    }[];
+  }
 }

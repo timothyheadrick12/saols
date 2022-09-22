@@ -33,14 +33,11 @@ export const handleTweet = async (tweet: any) => {
           //not positive this formatting gets the username
           let user = await getUser(tweet.data[0].author_id);
           if (!user) {
-            user = {
-              ...(await createUserDefault(
-                tweet.users[0].id,
-                tweet.users[0].username,
-                tweet.users[0].name
-              )),
-              participatedEvents: [],
-            };
+            user = await createUserDefault(
+              tweet.users[0].id,
+              tweet.users[0].username,
+              tweet.users[0].name
+            );
           } else if (
             user.name !== tweet.users[0].name ||
             user.username !== tweet.users[0].username
@@ -55,6 +52,8 @@ export const handleTweet = async (tweet: any) => {
                 ? tweet.users[0].username
                 : user.username
             );
+            user.name = tweet.users[0].name;
+            user.username = tweet.users[0].username;
           }
           const userParticipatedEvents = user.participatedEvents.map(
             (event) => event.id
@@ -75,7 +74,7 @@ export const handleTweet = async (tweet: any) => {
 
 export const handleEncounterTweet = async (
   tweet: any,
-  user: User,
+  user: ExpandedUser,
   event: Event
 ) => {
   if (tweet.text.toLowerCase().includes('attack')) {
@@ -102,13 +101,13 @@ export const handleEncounterTweet = async (
 
 export const handleMarketTweet = async (
   tweet: any,
-  user: User,
+  user: ExpandedUser,
   event: Event
 ) => {};
 
 export const handleBossTweet = async (
   tweet: any,
-  user: User,
+  user: ExpandedUser,
   event: Event
 ) => {};
 

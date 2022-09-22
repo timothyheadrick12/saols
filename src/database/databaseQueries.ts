@@ -94,7 +94,7 @@ export const getModerators = async (): Promise<User[] | null> => {
 
 //desc: Get a user from their unique id
 //post: return Promise<User>
-export const getUser = async (id: string) => {
+export const getUser = async (id: string): Promise<ExpandedUser | null> => {
   return prisma.user.findUnique({
     where: {
       id: id,
@@ -103,6 +103,11 @@ export const getUser = async (id: string) => {
       participatedEvents: {
         select: {
           id: true,
+        },
+      },
+      weapon: {
+        include: {
+          BaseWeapon: true,
         },
       },
     },
@@ -134,3 +139,5 @@ export const getParExp = async (level: number) => {
     },
   });
 };
+
+export const getParWeaponExp = async (level: number)
