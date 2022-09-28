@@ -110,6 +110,8 @@ export const getUser = async (id: string): Promise<ExpandedUser | null> => {
           BaseWeapon: true,
         },
       },
+      items: true,
+      weaponInventory: true,
     },
   });
 };
@@ -140,4 +142,10 @@ export const getParExp = async (level: number) => {
   });
 };
 
-export const getParWeaponExp = async (level: number)
+export const getParWeaponExp = async (level: number) => {
+  return prisma.parWeaponExp.findUnique({
+    where: {
+      lvl: level,
+    },
+  });
+};

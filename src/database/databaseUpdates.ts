@@ -1,4 +1,4 @@
-import {Event, User} from '@prisma/client';
+import {Event, Item, User, Weapon} from '@prisma/client';
 import {prisma} from './prismaClientInit';
 
 export const markEventsFinished = async (events: Event[]) => {
@@ -53,5 +53,14 @@ export const updateNames = async (
       username: username ?? user.username,
       name: name ?? user.name,
     },
+  });
+};
+
+export const updateUser = async (user: User) => {
+  prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: user,
   });
 };

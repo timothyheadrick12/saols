@@ -34,6 +34,8 @@ export const createUserDefault = async (
           BaseWeapon: true,
         },
       },
+      items: true,
+      weaponInventory: true,
     },
   });
 };

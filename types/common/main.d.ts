@@ -1,4 +1,4 @@
-import {BaseWeapon, TweetType, User, Weapon} from '@prisma/client';
+import {BaseWeapon, Item, TweetType, User, Weapon} from '@prisma/client';
 
 declare global {
   interface IMinEvent {
@@ -17,8 +17,10 @@ declare global {
     weapon: Weapon & {
       BaseWeapon: BaseWeapon;
     };
+    items: Item[];
     participatedEvents: {
       id: number;
     }[];
+    weaponInventory: Weapon[];
   }
 }

@@ -1,24 +1,39 @@
 import {BaseWeapon, Item, User, Weapon, WeaponType} from '@prisma/client';
-import {getParExp} from '../database/databaseQueries';
+import {getParExp, getParWeaponExp} from '../database/databaseQueries';
+import {updateUser} from '../database/databaseUpdates';
 
 export const handleLoot = async (
   user: ExpandedUser,
   cor?: number,
   exp?: number,
   items?: Item[],
-  weapon?: Weapon[]
+  weapons?: Weapon[]
 ) => {
   if (exp) {
-    user.exp += exp;
     const weaponTypeCamelCase = weaponTypeToLowerCamelCase(
       user.weapon.BaseWeapon.type
     );
     const weaponTypeExp = `${weaponTypeCamelCase}SkillExp`;
     const weaponTypeLvl = `${weaponTypeCamelCase}SkillLvl`;
-    if (hasKey(user, weaponTypeExp)) {
-      user.weaponTypeExp += exp; //needs work
-    }
-    getParExp(user.lvl).then((expObj) => {
+    //@ts-ignore this is a massive workaround, can't figure it out for now
+    user[weaponTypeExp] += exp;
+    await getParWeaponExp(user.lvl).then((expObj) => {
+      if (expObj) {
+        //@ts-ignore
+        if (user[weaponTypeExp] >= expObj!.value) {
+          //@ts-ignore
+          user[weaponTypeLvl] += 1;
+          //@ts-ignore
+          user[weaponTypeExp] -= expObj!.value;
+        }
+      } else {
+        console.log(
+          `ERROR: The level provided ${user.lvl} has no assciated expObj.`
+        );
+      }
+    });
+    user.exp += exp;
+    await getParExp(user.lvl).then((expObj) => {
       if (expObj) {
         if (user.exp >= expObj!.value) {
           user.lvl += 1;
@@ -31,6 +46,15 @@ export const handleLoot = async (
       }
     });
   }
+  user.cor += cor ?? 0;
+  if (weapons) {
+    weapons.forEach((weapon) => {
+      if (weapon.lvl >= user.weapon.lvl) user.weaponId = weapon.id;
+    });
+    user.weaponInventory.push(...weapons);
+  }
+  if (items) user.items.push(...items);
+  await updateUser(user);
 };
 
 /**
@@ -46,6 +70,3 @@ export const weaponTypeToLowerCamelCase = (weaponType: WeaponType): string => {
     .map((word) => `${word.slice(0, 1)}${word.slice(1).toLowerCase()}`)
     .join('')}`;
 };
-
-export const hasKey = <T>(type: T, key: PropertyKey): key is keyof T =>
-  key in type;
